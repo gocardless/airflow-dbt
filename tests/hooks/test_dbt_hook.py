@@ -7,6 +7,29 @@ from airflow_dbt.hooks.dbt_hook import DbtCliHook
 class TestDbtHook(TestCase):
 
     @mock.patch('subprocess.Popen')
+    def test_sub_commands(self, mock_subproc_popen):
+        mock_subproc_popen.return_value \
+            .communicate.return_value = ('output', 'error')
+        mock_subproc_popen.return_value.returncode = 0
+        mock_subproc_popen.return_value \
+            .stdout.readline.side_effect = [b"placeholder"]
+
+        hook = DbtCliHook()
+        hook.run_cli('docs', 'generate')
+
+        mock_subproc_popen.assert_called_once_with(
+            [
+                'dbt',
+                'docs',
+                'generate'
+                ],
+            close_fds=True,
+            cwd='.',
+            stdout=subprocess.PIPE,
+            stderr=subprocess.STDOUT
+            )
+
+    @mock.patch('subprocess.Popen')
     def test_vars(self, mock_subproc_popen):
         mock_subproc_popen.return_value \
             .communicate.return_value = ('output', 'error')

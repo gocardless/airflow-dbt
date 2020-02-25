@@ -57,7 +57,7 @@ class DbtCliHook(BaseHook):
         # correctly. However, as YAML is a super-set of JSON, this works just fine.
         return json.dumps(self.vars)
 
-    def run_cli(self, command):
+    def run_cli(self, *command):
         """
         Run the dbt cli
 
@@ -65,7 +65,7 @@ class DbtCliHook(BaseHook):
         :type command: str
         """
 
-        dbt_cmd = [self.dbt_bin, command]
+        dbt_cmd = [self.dbt_bin, *command]
 
         if self.profiles_dir is not None:
             dbt_cmd.extend(['--profiles-dir', self.profiles_dir])
