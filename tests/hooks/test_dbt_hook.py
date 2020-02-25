@@ -1,7 +1,7 @@
 from unittest import TestCase
 from unittest import mock
 import subprocess
-from dags._hooks.dbt_hook import DbtCliHook
+from airflow_dbt.hooks.dbt_hook import DbtCliHook
 
 
 class TestDbtHook(TestCase):

@@ -1,4 +1,4 @@
-from _hooks.dbt_hook import DbtCliHook
+from airflow_dbt.hooks.dbt_hook import DbtCliHook
 from airflow.models import BaseOperator
 from airflow.utils.decorators import apply_defaults
 
