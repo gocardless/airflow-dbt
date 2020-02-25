@@ -4,6 +4,28 @@ from airflow.utils.decorators import apply_defaults
 
 
 class DbtBaseOperator(BaseOperator):
+    """
+    Base dbt operator
+    All other dbt operators are derived from this operator.
+
+    :param profiles_dir: If set, passed as the `--profiles-dir` argument to the `dbt` command
+    :type profiles_dir: str
+    :param target: If set, passed as the `--target` argument to the `dbt` command
+    :type dir: str
+    :param dir: The directory to run the CLI in
+    :type vars: str
+    :param vars: If set, passed as the `--vars` argument to the `dbt` command
+    :type vars: dict
+    :param models: If set, passed as the `--models` argument to the `dbt` command
+    :type models: str
+    :param exclude: If set, passed as the `--exclude` argument to the `dbt` command
+    :type exclude: str
+    :param dbt_bin: The `dbt` CLI. Defaults to `dbt`, so assumes it's on your `PATH`
+    :type dbt_bin: str
+    :param verbose: The operator will log verbosely to the Airflow logs
+    :type verbose: bool
+    """
+
     ui_color = '#d6522a'
 
     @apply_defaults

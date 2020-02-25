@@ -10,8 +10,25 @@ from airflow.hooks.base_hook import BaseHook
 class DbtCliHook(BaseHook):
     """
     Simple wrapper around the dbt CLI.
-    :param output_encoding: Output encoding of bash command
+
+    :param profiles_dir: If set, passed as the `--profiles-dir` argument to the `dbt` command
+    :type profiles_dir: str
+    :param target: If set, passed as the `--target` argument to the `dbt` command
+    :type dir: str
+    :param dir: The directory to run the CLI in
+    :type vars: str
+    :param vars: If set, passed as the `--vars` argument to the `dbt` command
+    :type vars: dict
+    :param models: If set, passed as the `--models` argument to the `dbt` command
+    :type models: str
+    :param exclude: If set, passed as the `--exclude` argument to the `dbt` command
+    :type exclude: str
+    :param dbt_bin: The `dbt` CLI. Defaults to `dbt`, so assumes it's on your `PATH`
+    :type dbt_bin: str
+    :param output_encoding: Output encoding of bash command. Defaults to utf-8
     :type output_encoding: str
+    :param verbose: The operator will log verbosely to the Airflow logs
+    :type verbose: bool
     """
 
     def __init__(self,
@@ -24,12 +41,6 @@ class DbtCliHook(BaseHook):
                  dbt_bin='dbt',
                  output_encoding='utf-8',
                  verbose=True):
-        """
-        :param profiles_dir: the directory to load the profiles from
-        :type profiles_dir: string
-        :param dir: The directory to run the CLI in
-        :type dir: string
-        """
         self.profiles_dir = profiles_dir
         self.dir = dir
         self.target = target
@@ -49,6 +60,9 @@ class DbtCliHook(BaseHook):
     def run_cli(self, command):
         """
         Run the dbt cli
+
+        :param command: The dbt command to run
+        :type command: str
         """
 
         dbt_cmd = [self.dbt_bin, command]
