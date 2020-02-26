@@ -38,7 +38,7 @@ jobs:
           command: pip install flake8
       - run:
           name: Run lints
-          command: flake8 airflow_dbt/ tests/
+          command: flake8 airflow_dbt/ tests/ setup.py
 
 workflows:
   version: 2
