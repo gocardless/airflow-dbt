@@ -1,4 +1,3 @@
-import codecs
 import os
 from setuptools import setup, find_packages
 
@@ -9,8 +8,8 @@ about = {}
 with open(os.path.join(here, 'airflow_dbt', '__version__.py')) as f:
     exec(f.read(), about)
 
-with codecs.open('README.md', 'r', 'utf-8') as file:
-    long_description = file.read()
+with io.open(os.path.join(here, 'README.md'), encoding='utf-8') as f:
+    long_description = f.read()
 
 setup(
     name = 'airflow_dbt',
