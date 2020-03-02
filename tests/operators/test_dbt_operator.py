@@ -2,7 +2,7 @@ import datetime
 from unittest import TestCase, mock
 from airflow import DAG, configuration
 from airflow_dbt.hooks.dbt_hook import DbtCliHook
-from airflow_dbt.operators.dbt_operator import DbtRunOperator, DbtTestOperator, DbtDepsOperator
+from airflow_dbt.operators.dbt_operator import DbtRunOperator, DbtTestOperator
 
 
 class TestDbtOperator(TestCase):
@@ -31,12 +31,3 @@ class TestDbtOperator(TestCase):
         )
         operator.execute(None)
         mock_run_cli.assert_called_once_with('test')
-
-    @mock.patch.object(DbtCliHook, 'run_cli')
-    def test_dbt_deps(self, mock_run_cli):
-        operator = DbtDepsOperator(
-            task_id='deps',
-            dag=self.dag
-        )
-        operator.execute(None)
-        mock_run_cli.assert_called_once_with('deps')

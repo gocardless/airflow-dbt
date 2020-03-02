@@ -1,1 +1,1 @@
-from .dbt_operator import DbtRunOperator, DbtTestOperator, DbtDepsOperator
+from .dbt_operator import DbtRunOperator, DbtTestOperator
