@@ -68,12 +68,3 @@ class DbtTestOperator(DbtBaseOperator):
 
     def execute(self, context):
         self.hook.run_cli('test')
-
-
-class DbtDepsOperator(DbtBaseOperator):
-    @apply_defaults
-    def __init__(self, profiles_dir=None, target=None, *args, **kwargs):
-        super(DbtDepsOperator, self).__init__(profiles_dir=profiles_dir, target=target, *args, **kwargs)
-
-    def execute(self, context):
-        self.hook.run_cli('deps')

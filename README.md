@@ -33,14 +33,12 @@ It will also need access to the `dbt` CLI, which should either be on your `PATH`
 
 ## Usage
 
-There are three operators currently implemented:
+There are two operators currently implemented:
 
 * `DbtRunOperator`
   * Calls [`dbt run`](https://docs.getdbt.com/docs/run)
 * `DbtTestOperator`
   * Calls [`dbt test`](https://docs.getdbt.com/docs/test)
-* `DbtDepsOperator`
-  * Calls [`dbt deps`](https://docs.getdbt.com/docs/deps)
 
 Each of the above operators accept the following arguments:
 
@@ -64,6 +62,12 @@ Each of the above operators accept the following arguments:
 Typically you will want to use the `DbtRunOperator`, followed by the `DbtTestOperator`, as shown earlier.
 
 You can also use the hook directly. Typically this can be used for when you need to combine the `dbt` command with another task in the same operators, for example running `dbt docs` and uploading the docs to somewhere they can be served from.
+
+## Package management
+
+If you use dbt's package manager you should include all dependencies before deploying your dbt project.
+
+For Docker users, packages specified in `packages.yml` should be included as part your docker image by calling `dbt deps` in your `Dockerfile`.  
 
 ## License & Contributing
 
