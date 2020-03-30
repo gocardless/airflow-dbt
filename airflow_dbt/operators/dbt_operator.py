@@ -30,6 +30,8 @@ class DbtBaseOperator(BaseOperator):
 
     ui_color = '#d6522a'
 
+    template_fields = ['vars']
+
     @apply_defaults
     def __init__(self,
                  profiles_dir=None,
