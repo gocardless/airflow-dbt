@@ -80,7 +80,7 @@ pip install .
 
 ## Testing
 
-To run tests locally, first create a virtual environment (see 'Building Localy' section)
+To run tests locally, first create a virtual environment (see [Building Locally](https://github.com/gocardless/airflow-dbt#building-locally) section)
 
 Install dependencies:
 ```bash
@@ -95,7 +95,7 @@ pytest tests/
 ## Code style
 This project uses [flake8](https://flake8.pycqa.org/en/latest/).
 
-To check your code, first create a virtual environment (see 'Building Locally' section):
+To check your code, first create a virtual environment (see [Building Locally](https://github.com/gocardless/airflow-dbt#building-locally) section):
 ```bash
 pip install flake8
 flake8 airflow_dbt/ tests/ setup.py
