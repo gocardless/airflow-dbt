@@ -66,7 +66,7 @@ You can also use the hook directly. Typically this can be used for when you need
 ## Building Locally
 
 To install from the repository:
-First its recommended to create a virtual environment:
+First it's recommended to create a virtual environment:
 ```bash
 python3 -m venv .venv
 
