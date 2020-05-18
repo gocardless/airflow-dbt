@@ -63,6 +63,44 @@ Typically you will want to use the `DbtRunOperator`, followed by the `DbtTestOpe
 
 You can also use the hook directly. Typically this can be used for when you need to combine the `dbt` command with another task in the same operators, for example running `dbt docs` and uploading the docs to somewhere they can be served from.
 
+## Building Locally
+
+To install from the repository:
+First it's recommended to create a virtual environment:
+```bash
+python3 -m venv .venv
+
+source .venv/bin/activate
+```
+
+Install using `pip`:
+```bash
+pip install .
+```
+
+## Testing
+
+To run tests locally, first create a virtual environment (see [Building Locally](https://github.com/gocardless/airflow-dbt#building-locally) section)
+
+Install dependencies:
+```bash
+pip install . pytest
+```
+
+Run the tests:
+```bash
+pytest tests/
+```
+
+## Code style
+This project uses [flake8](https://flake8.pycqa.org/en/latest/).
+
+To check your code, first create a virtual environment (see [Building Locally](https://github.com/gocardless/airflow-dbt#building-locally) section):
+```bash
+pip install flake8
+flake8 airflow_dbt/ tests/ setup.py
+```
+
 ## Package management
 
 If you use dbt's package manager you should include all dependencies before deploying your dbt project.
