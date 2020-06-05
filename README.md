@@ -48,6 +48,8 @@ Each of the above operators accept the following arguments:
   * If set, passed as the `--target` argument to the `dbt` command
 * `dir`
   * The directory to run the `dbt` command in
+* `full_refresh`
+  * If set to `True`, passes `--full-refresh`
 * `vars`
   * If set, passed as the `--vars` argument to the `dbt` command. Should be set as a Python dictionary, as will be passed to the `dbt` command as YAML
 * `models`
@@ -105,7 +107,7 @@ flake8 airflow_dbt/ tests/ setup.py
 
 If you use dbt's package manager you should include all dependencies before deploying your dbt project.
 
-For Docker users, packages specified in `packages.yml` should be included as part your docker image by calling `dbt deps` in your `Dockerfile`.  
+For Docker users, packages specified in `packages.yml` should be included as part your docker image by calling `dbt deps` in your `Dockerfile`.
 
 ## License & Contributing
 

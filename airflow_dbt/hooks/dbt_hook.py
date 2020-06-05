@@ -19,6 +19,8 @@ class DbtCliHook(BaseHook):
     :type vars: str
     :param vars: If set, passed as the `--vars` argument to the `dbt` command
     :type vars: dict
+    :param full_refresh: If `True`, will fully-refresh incremental models.
+    :type full_refresh: bool
     :param models: If set, passed as the `--models` argument to the `dbt` command
     :type models: str
     :param exclude: If set, passed as the `--exclude` argument to the `dbt` command
@@ -36,6 +38,7 @@ class DbtCliHook(BaseHook):
                  target=None,
                  dir='.',
                  vars=None,
+                 full_refresh=False,
                  models=None,
                  exclude=None,
                  dbt_bin='dbt',
@@ -45,6 +48,7 @@ class DbtCliHook(BaseHook):
         self.dir = dir
         self.target = target
         self.vars = vars
+        self.full_refresh = full_refresh
         self.models = models
         self.exclude = exclude
         self.dbt_bin = dbt_bin
@@ -84,6 +88,9 @@ class DbtCliHook(BaseHook):
 
         if self.verbose:
             self.log.info(" ".join(dbt_cmd))
+
+        if self.full_refresh:
+            dbt_cmd.extend(['--full-refresh'])
 
         sp = subprocess.Popen(
             dbt_cmd,

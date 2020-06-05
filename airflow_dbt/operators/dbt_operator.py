@@ -16,6 +16,8 @@ class DbtBaseOperator(BaseOperator):
     :type vars: str
     :param vars: If set, passed as the `--vars` argument to the `dbt` command
     :type vars: dict
+    :param full_refresh: If `True`, will fully-refresh incremental models.
+    :type full_refresh: bool
     :param models: If set, passed as the `--models` argument to the `dbt` command
     :type models: str
     :param exclude: If set, passed as the `--exclude` argument to the `dbt` command
@@ -38,6 +40,7 @@ class DbtBaseOperator(BaseOperator):
                  exclude=None,
                  dbt_bin='dbt',
                  verbose=True,
+                 full_refresh=False,
                  *args,
                  **kwargs):
         super(DbtBaseOperator, self).__init__(*args, **kwargs)
@@ -46,6 +49,7 @@ class DbtBaseOperator(BaseOperator):
             target=target,
             dir=dir,
             vars=vars,
+            full_refresh=full_refresh,
             models=models,
             exclude=exclude,
             dbt_bin=dbt_bin,
