@@ -13,6 +13,10 @@ with DAG(dag_id='dbt', default_args=default_args, schedule_interval='@daily') as
     task_id='dbt_run',
   )
 
+  dbt_run = DbtSnapshotOperator(
+    task_id='dbt_snapshot',
+  )
+
   dbt_test = DbtTestOperator(
     task_id='dbt_test',
     retries=0,  # Failing tests would fail the task, and we don't want Airflow to try again
@@ -39,6 +43,8 @@ There are two operators currently implemented:
   * Calls [`dbt run`](https://docs.getdbt.com/docs/run)
 * `DbtTestOperator`
   * Calls [`dbt test`](https://docs.getdbt.com/docs/test)
+* `DbtSnapshotOperator`
+  * Calls [`dbt test`](https://docs.getdbt.com/docs/snapshot)
 
 Each of the above operators accept the following arguments:
 

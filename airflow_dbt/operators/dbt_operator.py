@@ -57,18 +57,33 @@ class DbtBaseOperator(BaseOperator):
 
 
 class DbtRunOperator(DbtBaseOperator):
+
     @apply_defaults
     def __init__(self, profiles_dir=None, target=None, *args, **kwargs):
-        super(DbtRunOperator, self).__init__(profiles_dir=profiles_dir, target=target, *args, **kwargs)
+        super(DbtRunOperator, self).__init__(
+            profiles_dir=profiles_dir, target=target, *args, **kwargs)
 
     def execute(self, context):
         self.hook.run_cli('run')
 
 
 class DbtTestOperator(DbtBaseOperator):
+
     @apply_defaults
     def __init__(self, profiles_dir=None, target=None, *args, **kwargs):
-        super(DbtTestOperator, self).__init__(profiles_dir=profiles_dir, target=target, *args, **kwargs)
+        super(DbtTestOperator, self).__init__(
+            profiles_dir=profiles_dir, target=target, *args, **kwargs)
 
     def execute(self, context):
         self.hook.run_cli('test')
+
+
+class DbtSnapshotOperator(DbtBaseOperator):
+
+    @apply_defaults
+    def __init__(self, profiles_dir=None, target=None, *args, **kwargs):
+        super(DbtSnapshotOperator, self).__init__(
+            profiles_dir=profiles_dir, target=target, *args, **kwargs)
+
+    def execute(self, context):
+        self.hook.run_cli('snapshot')
