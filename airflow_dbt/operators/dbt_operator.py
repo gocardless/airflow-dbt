@@ -89,3 +89,12 @@ class DbtTestOperator(DbtBaseOperator):
 
     def execute(self, context):
         self.create_hook().run_cli('test')
+
+
+class DbtSnapshotOperator(DbtBaseOperator):
+    @apply_defaults
+    def __init__(self, profiles_dir=None, target=None, *args, **kwargs):
+        super(DbtSnapshotOperator, self).__init__(profiles_dir=profiles_dir, target=target, *args, **kwargs)
+
+    def execute(self, context):
+        self.create_hook().run_cli('snapshot')

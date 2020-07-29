@@ -14,6 +14,10 @@ default_args = {
 
 with DAG(dag_id='dbt', default_args=default_args, schedule_interval='@daily') as dag:
 
+  dbt_snapshot = DbtSnapshotOperator(
+    task_id='dbt_snapshot',
+  )
+
   dbt_run = DbtRunOperator(
     task_id='dbt_run',
   )
@@ -23,7 +27,7 @@ with DAG(dag_id='dbt', default_args=default_args, schedule_interval='@daily') as
     retries=0,  # Failing tests would fail the task, and we don't want Airflow to try again
   )
 
-  dbt_run >> dbt_test
+  dbt_snapshot >> dbt_run >> dbt_test
 ```
 
 ## Installation
@@ -38,10 +42,12 @@ It will also need access to the `dbt` CLI, which should either be on your `PATH`
 
 ## Usage
 
-There are two operators currently implemented:
+There are three operators currently implemented:
 
 * `DbtRunOperator`
   * Calls [`dbt run`](https://docs.getdbt.com/docs/run)
+* `DbtSnapshotOperator`
+  * Calls [`dbt snapshot`](https://docs.getdbt.com/docs/snapshot)
 * `DbtTestOperator`
   * Calls [`dbt test`](https://docs.getdbt.com/docs/test)
 
