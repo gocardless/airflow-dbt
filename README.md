@@ -44,7 +44,7 @@ There are two operators currently implemented:
 * `DbtTestOperator`
   * Calls [`dbt test`](https://docs.getdbt.com/docs/test)
 * `DbtSnapshotOperator`
-  * Calls [`dbt test`](https://docs.getdbt.com/docs/snapshot)
+  * Calls [`dbt snapshot`](https://docs.getdbt.com/docs/snapshot)
 
 Each of the above operators accept the following arguments:
 
