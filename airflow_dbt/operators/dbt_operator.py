@@ -30,6 +30,8 @@ class DbtBaseOperator(BaseOperator):
 
     ui_color = '#d6522a'
 
+    template_fields = ['vars']
+
     @apply_defaults
     def __init__(self,
                  profiles_dir=None,
@@ -44,16 +46,30 @@ class DbtBaseOperator(BaseOperator):
                  *args,
                  **kwargs):
         super(DbtBaseOperator, self).__init__(*args, **kwargs)
+
+        self.profiles_dir = profiles_dir
+        self.target = target
+        self.dir = dir
+        self.vars = vars
+        self.models = models
+        self.full_refresh = full_refresh
+        self.exclude = exclude
+        self.dbt_bin = dbt_bin
+        self.verbose = verbose
+
+    def create_hook(self):
         self.hook = DbtCliHook(
-            profiles_dir=profiles_dir,
-            target=target,
-            dir=dir,
-            vars=vars,
-            full_refresh=full_refresh,
-            models=models,
-            exclude=exclude,
-            dbt_bin=dbt_bin,
-            verbose=verbose)
+            profiles_dir=self.profiles_dir,
+            target=self.target,
+            dir=self.dir,
+            vars=self.vars,
+            full_refresh=self.full_refresh,
+            models=self.models,
+            exclude=self.exclude,
+            dbt_bin=self.dbt_bin,
+            verbose=self.verbose)
+        
+        return self.hook
 
 
 class DbtRunOperator(DbtBaseOperator):
@@ -62,7 +78,7 @@ class DbtRunOperator(DbtBaseOperator):
         super(DbtRunOperator, self).__init__(profiles_dir=profiles_dir, target=target, *args, **kwargs)
 
     def execute(self, context):
-        self.hook.run_cli('run')
+        self.create_hook().run_cli('run')
 
 
 class DbtTestOperator(DbtBaseOperator):
@@ -71,4 +87,4 @@ class DbtTestOperator(DbtBaseOperator):
         super(DbtTestOperator, self).__init__(profiles_dir=profiles_dir, target=target, *args, **kwargs)
 
     def execute(self, context):
-        self.hook.run_cli('test')
+        self.create_hook().run_cli('test')
