@@ -56,6 +56,7 @@ class DbtBaseOperator(BaseOperator):
         self.exclude = exclude
         self.dbt_bin = dbt_bin
         self.verbose = verbose
+        self.create_hook()
 
     def create_hook(self):
         self.hook = DbtCliHook(
