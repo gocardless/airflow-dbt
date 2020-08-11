@@ -69,7 +69,7 @@ class DbtBaseOperator(BaseOperator):
             exclude=self.exclude,
             dbt_bin=self.dbt_bin,
             verbose=self.verbose)
-        
+
         return self.hook
 
 
