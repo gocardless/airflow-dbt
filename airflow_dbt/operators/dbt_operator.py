@@ -94,8 +94,6 @@ class DbtTestOperator(DbtBaseOperator):
 class DbtDocsGenerateOperator(DbtBaseOperator):
     @apply_defaults
     def __init__(self, profiles_dir=None, target=None, *args, **kwargs):
-        super(DbtDocsGenerateOperator, self).__init__(
-            profiles_dir=profiles_dir, target=target, *args, **kwargs
-        )
+        super(DbtDocsGenerateOperator, self).__init__(profiles_dir=profiles_dir, target=target, *args, **kwargs)
     def execute(self, context):
-        self.hook.run_cli("docs", "generate")
+        self.create_hook().run_cli('docs', 'generate')
