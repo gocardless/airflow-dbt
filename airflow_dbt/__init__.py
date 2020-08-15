@@ -1,2 +1,2 @@
 from .hooks import DbtCliHook
-from .operators import DbtRunOperator, DbtTestOperator
+from .operators import DbtRunOperator, DbtTestOperator, DbtDocsGenerateOperator
