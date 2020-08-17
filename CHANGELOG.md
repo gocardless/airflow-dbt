@@ -15,3 +15,8 @@ Removed the operator `DbtDepsOperator`. Dependencies defined in dbt's `packages.
 
 * `DbtDepsOperator`
   * Calls [`dbt deps`](https://docs.getdbt.com/docs/deps)
+
+
+# v0.1.1
+
+Makes `vars` a jinja templated field. See [here](https://airflow.apache.org/docs/stable/concepts.html#jinja-templating) for more information.
