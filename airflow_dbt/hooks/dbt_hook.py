@@ -39,6 +39,8 @@ class DbtCliHook(BaseHook):
                  dir='.',
                  vars=None,
                  full_refresh=False,
+                 data_test=False,
+                 schema_test=False,
                  models=None,
                  exclude=None,
                  dbt_bin='dbt',
@@ -49,6 +51,8 @@ class DbtCliHook(BaseHook):
         self.target = target
         self.vars = vars
         self.full_refresh = full_refresh
+        self.data_test = data_test
+        self.schema_test = schema_test
         self.models = models
         self.exclude = exclude
         self.dbt_bin = dbt_bin
@@ -91,6 +95,12 @@ class DbtCliHook(BaseHook):
 
         if self.full_refresh:
             dbt_cmd.extend(['--full-refresh'])
+
+        if self.data_test:
+            dbt_cmd.extend(['--data'])
+
+        if self.schema_test:
+            dbt_cmd.extend(['--schema'])
 
         sp = subprocess.Popen(
             dbt_cmd,

@@ -43,6 +43,8 @@ class DbtBaseOperator(BaseOperator):
                  dbt_bin='dbt',
                  verbose=True,
                  full_refresh=False,
+                 data_test=False,
+                 schema_test=False,
                  *args,
                  **kwargs):
         super(DbtBaseOperator, self).__init__(*args, **kwargs)
@@ -53,6 +55,8 @@ class DbtBaseOperator(BaseOperator):
         self.vars = vars
         self.models = models
         self.full_refresh = full_refresh
+        self.data_test = data_test
+        self.schema_test = schema_test
         self.exclude = exclude
         self.dbt_bin = dbt_bin
         self.verbose = verbose
@@ -65,6 +69,8 @@ class DbtBaseOperator(BaseOperator):
             dir=self.dir,
             vars=self.vars,
             full_refresh=self.full_refresh,
+            data_test=self.data_test,
+            schema_test=self.schema_test,
             models=self.models,
             exclude=self.exclude,
             dbt_bin=self.dbt_bin,
