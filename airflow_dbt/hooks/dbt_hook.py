@@ -86,11 +86,11 @@ class DbtCliHook(BaseHook):
         if self.exclude is not None:
             dbt_cmd.extend(['--exclude', self.exclude])
 
-        if self.verbose:
-            self.log.info(" ".join(dbt_cmd))
-
         if self.full_refresh:
             dbt_cmd.extend(['--full-refresh'])
+
+        if self.verbose:
+            self.log.info(" ".join(dbt_cmd))
 
         sp = subprocess.Popen(
             dbt_cmd,
