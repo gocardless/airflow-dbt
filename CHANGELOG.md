@@ -20,3 +20,7 @@ Removed the operator `DbtDepsOperator`. Dependencies defined in dbt's `packages.
 # v0.1.1
 
 Makes `vars` a jinja templated field. See [here](https://airflow.apache.org/docs/stable/concepts.html#jinja-templating) for more information.
+
+# v0.1.2
+
+Fix verbose logging of command to include `--full_refresh`.
