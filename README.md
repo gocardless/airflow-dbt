@@ -3,8 +3,13 @@
 This is a collection of [Airflow](https://airflow.apache.org/) operators to provide easy integration with [dbt](https://www.getdbt.com).
 
 ```py
+from airflow import DAG
+from airflow_dbt.operators.dbt_operator import DbtRunOperator, DbtTestOperator
+from airflow.utils.dates import days_ago
+
 default_args = {
-  dbt_dir = '/srv/app/dbt'
+  'dir': '/srv/app/dbt',
+  'start_date': days_ago(0)
 }
 
 with DAG(dag_id='dbt', default_args=default_args, schedule_interval='@daily') as dag:
