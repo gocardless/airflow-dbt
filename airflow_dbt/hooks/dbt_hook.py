@@ -41,6 +41,7 @@ class DbtCliHook(BaseHook):
                  full_refresh=False,
                  models=None,
                  exclude=None,
+                 select=None,
                  dbt_bin='dbt',
                  output_encoding='utf-8',
                  verbose=True):
@@ -51,6 +52,7 @@ class DbtCliHook(BaseHook):
         self.full_refresh = full_refresh
         self.models = models
         self.exclude = exclude
+        self.select = select
         self.dbt_bin = dbt_bin
         self.verbose = verbose
         self.output_encoding = output_encoding
@@ -85,6 +87,9 @@ class DbtCliHook(BaseHook):
 
         if self.exclude is not None:
             dbt_cmd.extend(['--exclude', self.exclude])
+
+        if self.select is not None:
+            dbt_cmd.extend(['--select', self.exclude])
 
         if self.full_refresh:
             dbt_cmd.extend(['--full-refresh'])
