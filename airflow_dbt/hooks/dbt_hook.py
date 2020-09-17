@@ -91,7 +91,7 @@ class DbtCliHook(BaseHook):
             dbt_cmd.extend(['--exclude', self.exclude])
 
         if self.select is not None:
-            dbt_cmd.extend(['--select', self.exclude])
+            dbt_cmd.extend(['--select', self.select])
 
         if self.full_refresh:
             dbt_cmd.extend(['--full-refresh'])
