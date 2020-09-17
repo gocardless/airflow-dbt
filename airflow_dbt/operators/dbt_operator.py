@@ -98,3 +98,12 @@ class DbtSnapshotOperator(DbtBaseOperator):
 
     def execute(self, context):
         self.create_hook().run_cli('snapshot')
+
+
+class DbtSeedOperator(DbtBaseOperator):
+    @apply_defaults
+    def __init__(self, profiles_dir=None, target=None, *args, **kwargs):
+        super(DbtSeedOperator, self).__init__(profiles_dir=profiles_dir, target=target, *args, **kwargs)
+
+    def execute(self, context):
+        self.create_hook().run_cli('seed')
