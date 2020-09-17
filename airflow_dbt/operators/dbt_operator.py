@@ -22,6 +22,8 @@ class DbtBaseOperator(BaseOperator):
     :type models: str
     :param exclude: If set, passed as the `--exclude` argument to the `dbt` command
     :type exclude: str
+    :param select: If set, passed as the `--select` argument to the `dbt` command
+    :type select: str
     :param dbt_bin: The `dbt` CLI. Defaults to `dbt`, so assumes it's on your `PATH`
     :type dbt_bin: str
     :param verbose: The operator will log verbosely to the Airflow logs

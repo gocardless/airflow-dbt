@@ -25,6 +25,8 @@ class DbtCliHook(BaseHook):
     :type models: str
     :param exclude: If set, passed as the `--exclude` argument to the `dbt` command
     :type exclude: str
+    :param select: If set, passed as the `--select` argument to the `dbt` command
+    :type select: str
     :param dbt_bin: The `dbt` CLI. Defaults to `dbt`, so assumes it's on your `PATH`
     :type dbt_bin: str
     :param output_encoding: Output encoding of bash command. Defaults to utf-8
