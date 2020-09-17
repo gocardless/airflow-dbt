@@ -4,7 +4,7 @@ This is a collection of [Airflow](https://airflow.apache.org/) operators to prov
 
 ```py
 from airflow import DAG
-from airflow_dbt.operators.dbt_operator import DbtRunOperator, DbtTestOperator
+from airflow_dbt.operators.dbt_operator import DbtSnapshotOperator, DbtRunOperator, DbtTestOperator
 from airflow.utils.dates import days_ago
 
 default_args = {
@@ -67,6 +67,8 @@ Each of the above operators accept the following arguments:
   * If set, passed as the `--models` argument to the `dbt` command
 * `exclude`
   * If set, passed as the `--exclude` argument to the `dbt` command
+* `select`
+  * If set, passed as the `--select` argument to the `dbt` command
 * `dbt_bin`
   * The `dbt` CLI. Defaults to `dbt`, so assumes it's on your `PATH`
 * `verbose`
