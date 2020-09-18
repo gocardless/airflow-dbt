@@ -28,3 +28,9 @@ Fix verbose logging of command to include `--full_refresh`.
 # v0.2.0
 
 Add the `DbtSnapshotOperator`.
+
+# v0.3.0
+
+Add the `DbtSeedOperator`.
+
+Support `--select` for the `DbtSnapshotOperator`.
