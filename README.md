@@ -4,7 +4,12 @@ This is a collection of [Airflow](https://airflow.apache.org/) operators to prov
 
 ```py
 from airflow import DAG
-from airflow_dbt.operators.dbt_operator import DbtSnapshotOperator, DbtRunOperator, DbtTestOperator
+from airflow_dbt.operators.dbt_operator import (
+    DbtSeedOperator,
+    DbtSnapshotOperator,
+    DbtRunOperator,
+    DbtTestOperator
+)
 from airflow.utils.dates import days_ago
 
 default_args = {
@@ -13,6 +18,10 @@ default_args = {
 }
 
 with DAG(dag_id='dbt', default_args=default_args, schedule_interval='@daily') as dag:
+
+  dbt_seed = DbtSeedOperator(
+    task_id='dbt_seed',
+  )
 
   dbt_snapshot = DbtSnapshotOperator(
     task_id='dbt_snapshot',
@@ -27,7 +36,7 @@ with DAG(dag_id='dbt', default_args=default_args, schedule_interval='@daily') as
     retries=0,  # Failing tests would fail the task, and we don't want Airflow to try again
   )
 
-  dbt_snapshot >> dbt_run >> dbt_test
+  dbt_seed >> dbt_snapshot >> dbt_run >> dbt_test
 ```
 
 ## Installation
@@ -42,14 +51,17 @@ It will also need access to the `dbt` CLI, which should either be on your `PATH`
 
 ## Usage
 
-There are three operators currently implemented:
+There are four operators currently implemented:
 
-* `DbtRunOperator`
-  * Calls [`dbt run`](https://docs.getdbt.com/docs/run)
+* `DbtSeedOperator`
+  * Calls [`dbt seed`](https://docs.getdbt.com/docs/seed)
 * `DbtSnapshotOperator`
   * Calls [`dbt snapshot`](https://docs.getdbt.com/docs/snapshot)
+* `DbtRunOperator`
+  * Calls [`dbt run`](https://docs.getdbt.com/docs/run)
 * `DbtTestOperator`
   * Calls [`dbt test`](https://docs.getdbt.com/docs/test)
+
 
 Each of the above operators accept the following arguments:
 
