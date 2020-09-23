@@ -3,11 +3,29 @@
 This is a collection of [Airflow](https://airflow.apache.org/) operators to provide easy integration with [dbt](https://www.getdbt.com).
 
 ```py
+from airflow import DAG
+from airflow_dbt.operators.dbt_operator import (
+    DbtSeedOperator,
+    DbtSnapshotOperator,
+    DbtRunOperator,
+    DbtTestOperator
+)
+from airflow.utils.dates import days_ago
+
 default_args = {
-  dbt_dir = '/srv/app/dbt'
+  'dir': '/srv/app/dbt',
+  'start_date': days_ago(0)
 }
 
 with DAG(dag_id='dbt', default_args=default_args, schedule_interval='@daily') as dag:
+
+  dbt_seed = DbtSeedOperator(
+    task_id='dbt_seed',
+  )
+
+  dbt_snapshot = DbtSnapshotOperator(
+    task_id='dbt_snapshot',
+  )
 
   dbt_run = DbtRunOperator(
     task_id='dbt_run',
@@ -18,7 +36,7 @@ with DAG(dag_id='dbt', default_args=default_args, schedule_interval='@daily') as
     retries=0,  # Failing tests would fail the task, and we don't want Airflow to try again
   )
 
-  dbt_run >> dbt_test
+  dbt_seed >> dbt_snapshot >> dbt_run >> dbt_test
 ```
 
 ## Installation
@@ -33,12 +51,17 @@ It will also need access to the `dbt` CLI, which should either be on your `PATH`
 
 ## Usage
 
-There are two operators currently implemented:
+There are four operators currently implemented:
 
+* `DbtSeedOperator`
+  * Calls [`dbt seed`](https://docs.getdbt.com/docs/seed)
+* `DbtSnapshotOperator`
+  * Calls [`dbt snapshot`](https://docs.getdbt.com/docs/snapshot)
 * `DbtRunOperator`
   * Calls [`dbt run`](https://docs.getdbt.com/docs/run)
 * `DbtTestOperator`
   * Calls [`dbt test`](https://docs.getdbt.com/docs/test)
+
 
 Each of the above operators accept the following arguments:
 
@@ -56,6 +79,8 @@ Each of the above operators accept the following arguments:
   * If set, passed as the `--models` argument to the `dbt` command
 * `exclude`
   * If set, passed as the `--exclude` argument to the `dbt` command
+* `select`
+  * If set, passed as the `--select` argument to the `dbt` command
 * `dbt_bin`
   * The `dbt` CLI. Defaults to `dbt`, so assumes it's on your `PATH`
 * `verbose`

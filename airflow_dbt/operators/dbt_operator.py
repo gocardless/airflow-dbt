@@ -22,6 +22,8 @@ class DbtBaseOperator(BaseOperator):
     :type models: str
     :param exclude: If set, passed as the `--exclude` argument to the `dbt` command
     :type exclude: str
+    :param select: If set, passed as the `--select` argument to the `dbt` command
+    :type select: str
     :param dbt_bin: The `dbt` CLI. Defaults to `dbt`, so assumes it's on your `PATH`
     :type dbt_bin: str
     :param verbose: The operator will log verbosely to the Airflow logs
@@ -40,6 +42,7 @@ class DbtBaseOperator(BaseOperator):
                  vars=None,
                  models=None,
                  exclude=None,
+                 select=None,
                  dbt_bin='dbt',
                  verbose=True,
                  full_refresh=False,
@@ -58,6 +61,7 @@ class DbtBaseOperator(BaseOperator):
         self.data_test = data_test
         self.schema_test = schema_test
         self.exclude = exclude
+        self.select = select
         self.dbt_bin = dbt_bin
         self.verbose = verbose
         self.create_hook()
@@ -73,6 +77,7 @@ class DbtBaseOperator(BaseOperator):
             schema_test=self.schema_test,
             models=self.models,
             exclude=self.exclude,
+            select=self.select,
             dbt_bin=self.dbt_bin,
             verbose=self.verbose)
 
@@ -104,3 +109,19 @@ class DbtDocsGenerateOperator(DbtBaseOperator):
         
     def execute(self, context):
         self.create_hook().run_cli('docs', 'generate')
+class DbtSnapshotOperator(DbtBaseOperator):
+    @apply_defaults
+    def __init__(self, profiles_dir=None, target=None, *args, **kwargs):
+        super(DbtSnapshotOperator, self).__init__(profiles_dir=profiles_dir, target=target, *args, **kwargs)
+
+    def execute(self, context):
+        self.create_hook().run_cli('snapshot')
+
+
+class DbtSeedOperator(DbtBaseOperator):
+    @apply_defaults
+    def __init__(self, profiles_dir=None, target=None, *args, **kwargs):
+        super(DbtSeedOperator, self).__init__(profiles_dir=profiles_dir, target=target, *args, **kwargs)
+
+    def execute(self, context):
+        self.create_hook().run_cli('seed')
