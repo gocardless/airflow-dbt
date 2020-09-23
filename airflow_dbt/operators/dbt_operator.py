@@ -46,8 +46,8 @@ class DbtBaseOperator(BaseOperator):
                  dbt_bin='dbt',
                  verbose=True,
                  full_refresh=False,
-                 data_test=False,
-                 schema_test=False,
+                 data=False,
+                 schema=False,
                  *args,
                  **kwargs):
         super(DbtBaseOperator, self).__init__(*args, **kwargs)
@@ -58,8 +58,8 @@ class DbtBaseOperator(BaseOperator):
         self.vars = vars
         self.models = models
         self.full_refresh = full_refresh
-        self.data_test = data_test
-        self.schema_test = schema_test
+        self.data = data
+        self.schema = schema
         self.exclude = exclude
         self.select = select
         self.dbt_bin = dbt_bin
@@ -73,8 +73,8 @@ class DbtBaseOperator(BaseOperator):
             dir=self.dir,
             vars=self.vars,
             full_refresh=self.full_refresh,
-            data_test=self.data_test,
-            schema_test=self.schema_test,
+            data=self.data,
+            schema=self.schema,
             models=self.models,
             exclude=self.exclude,
             select=self.select,
@@ -105,10 +105,13 @@ class DbtTestOperator(DbtBaseOperator):
 class DbtDocsGenerateOperator(DbtBaseOperator):
     @apply_defaults
     def __init__(self, profiles_dir=None, target=None, *args, **kwargs):
-        super(DbtDocsGenerateOperator, self).__init__(profiles_dir=profiles_dir, target=target, *args, **kwargs)
-        
+        super(DbtDocsGenerateOperator, self).__init__(profiles_dir=profiles_dir, target=target, *args,
+                                                      **kwargs)
+
     def execute(self, context):
         self.create_hook().run_cli('docs', 'generate')
+
+
 class DbtSnapshotOperator(DbtBaseOperator):
     @apply_defaults
     def __init__(self, profiles_dir=None, target=None, *args, **kwargs):

@@ -87,7 +87,7 @@ class DbtCliHook(BaseHook):
 
         if self.vars is not None:
             dbt_cmd.extend(['--vars', self._dump_vars()])
-            
+
         if self.data_test:
             dbt_cmd.extend(['--data'])
 
