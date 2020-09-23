@@ -41,8 +41,8 @@ class DbtCliHook(BaseHook):
                  dir='.',
                  vars=None,
                  full_refresh=False,
-                 data_test=False,
-                 schema_test=False,
+                 data=False,
+                 schema=False,
                  models=None,
                  exclude=None,
                  select=None,
@@ -54,8 +54,8 @@ class DbtCliHook(BaseHook):
         self.target = target
         self.vars = vars
         self.full_refresh = full_refresh
-        self.data_test = data_test
-        self.schema_test = schema_test
+        self.data = data
+        self.schema = schema
         self.models = models
         self.exclude = exclude
         self.select = select
@@ -88,10 +88,10 @@ class DbtCliHook(BaseHook):
         if self.vars is not None:
             dbt_cmd.extend(['--vars', self._dump_vars()])
 
-        if self.data_test:
+        if self.data:
             dbt_cmd.extend(['--data'])
 
-        if self.schema_test:
+        if self.schema:
             dbt_cmd.extend(['--schema'])
 
         if self.models is not None:
