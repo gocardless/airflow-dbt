@@ -23,6 +23,8 @@ class DbtCliHook(BaseHook):
     :type full_refresh: bool
     :param models: If set, passed as the `--models` argument to the `dbt` command
     :type models: str
+    :param warn_error: If `True`, treat warnings as errors.
+    :type warn_error: bool
     :param exclude: If set, passed as the `--exclude` argument to the `dbt` command
     :type exclude: str
     :param select: If set, passed as the `--select` argument to the `dbt` command
@@ -48,7 +50,8 @@ class DbtCliHook(BaseHook):
                  select=None,
                  dbt_bin='dbt',
                  output_encoding='utf-8',
-                 verbose=True):
+                 verbose=True,
+                 warn_error=False):
         self.profiles_dir = profiles_dir
         self.dir = dir
         self.target = target
@@ -61,6 +64,7 @@ class DbtCliHook(BaseHook):
         self.select = select
         self.dbt_bin = dbt_bin
         self.verbose = verbose
+        self.warn_error = warn_error
         self.output_encoding = output_encoding
 
     def _dump_vars(self):
@@ -108,6 +112,9 @@ class DbtCliHook(BaseHook):
 
         if self.verbose:
             self.log.info(" ".join(dbt_cmd))
+
+        if self.warn_error:
+            dbt_cmd.insert(1, '--warn-error')
 
         sp = subprocess.Popen(
             dbt_cmd,
