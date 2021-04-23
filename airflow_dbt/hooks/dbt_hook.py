@@ -110,11 +110,11 @@ class DbtCliHook(BaseHook):
         if self.full_refresh:
             dbt_cmd.extend(['--full-refresh'])
 
-        if self.verbose:
-            self.log.info(" ".join(dbt_cmd))
-
         if self.warn_error:
             dbt_cmd.insert(1, '--warn-error')
+
+        if self.verbose:
+            self.log.info(" ".join(dbt_cmd))
 
         sp = subprocess.Popen(
             dbt_cmd,
