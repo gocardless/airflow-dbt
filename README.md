@@ -2,6 +2,11 @@
 
 This is a collection of [Airflow](https://airflow.apache.org/) operators to provide easy integration with [dbt](https://www.getdbt.com).
 
+Forked for: Add feature to allow environment variables to be passed to the dbt command line, so that profiles.yml can receive
+secrets at runtime from the airflow DAG.  This improves management of airflow-dbt pipelines on AWS MWAA with secrets pulled from 
+an aws secrets store.
+
+
 ```py
 from airflow import DAG
 from airflow_dbt.operators.dbt_operator import (

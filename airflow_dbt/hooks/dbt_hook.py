@@ -40,6 +40,7 @@ class DbtCliHook(BaseHook):
                  target=None,
                  dir='.',
                  vars=None,
+                 environ={},
                  full_refresh=False,
                  data=False,
                  schema=False,
@@ -53,6 +54,7 @@ class DbtCliHook(BaseHook):
         self.dir = dir
         self.target = target
         self.vars = vars
+        self.environ = environ
         self.full_refresh = full_refresh
         self.data = data
         self.schema = schema
@@ -108,6 +110,13 @@ class DbtCliHook(BaseHook):
 
         if self.verbose:
             self.log.info(" ".join(dbt_cmd))
+
+        # --- begin forked changed ---
+        # If we pass env to Popen, it overrides the inherited environment, which is not what we want.
+        # Instead, we want to supplement the inherited environment with what the user passed in.  Do that now.
+        for key in self.environ:
+            os.environ[key] = self.environ[key]
+        # --- end forked changed ---
 
         sp = subprocess.Popen(
             dbt_cmd,

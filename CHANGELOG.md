@@ -34,3 +34,8 @@ Add the `DbtSnapshotOperator`.
 Add the `DbtSeedOperator`.
 
 Support `--select` for the `DbtSnapshotOperator`.
+
+# v0.3.0-jennybrown8
+
+Added support for passing environment variables to the dbt command line from any operator.  Pass environ={} with a python dict.
+

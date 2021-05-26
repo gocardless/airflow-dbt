@@ -40,6 +40,7 @@ class DbtBaseOperator(BaseOperator):
                  target=None,
                  dir='.',
                  vars=None,
+                 environ={},
                  models=None,
                  exclude=None,
                  select=None,
@@ -56,6 +57,7 @@ class DbtBaseOperator(BaseOperator):
         self.target = target
         self.dir = dir
         self.vars = vars
+        self.environ = environ
         self.models = models
         self.full_refresh = full_refresh
         self.data = data
@@ -72,6 +74,7 @@ class DbtBaseOperator(BaseOperator):
             target=self.target,
             dir=self.dir,
             vars=self.vars,
+            environ=self.environ,
             full_refresh=self.full_refresh,
             data=self.data,
             schema=self.schema,
