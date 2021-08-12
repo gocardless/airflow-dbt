@@ -51,8 +51,10 @@ It will also need access to the `dbt` CLI, which should either be on your `PATH`
 
 ## Usage
 
-There are four operators currently implemented:
+There are five operators currently implemented:
 
+* `DbtDocsGenerateOperator`
+  * Calls [`dbt docs generate`](https://docs.getdbt.com/reference/commands/cmd-docs)
 * `DbtSeedOperator`
   * Calls [`dbt seed`](https://docs.getdbt.com/docs/seed)
 * `DbtSnapshotOperator`
@@ -85,6 +87,8 @@ Each of the above operators accept the following arguments:
   * The `dbt` CLI. Defaults to `dbt`, so assumes it's on your `PATH`
 * `verbose`
   * The operator will log verbosely to the Airflow logs
+* `warn_error`
+  * If set to `True`, passes `--warn-error` argument to `dbt` command and will treat warnings as errors
 
 Typically you will want to use the `DbtRunOperator`, followed by the `DbtTestOperator`, as shown earlier.
 

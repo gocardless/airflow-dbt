@@ -20,6 +20,8 @@ class DbtBaseOperator(BaseOperator):
     :type full_refresh: bool
     :param models: If set, passed as the `--models` argument to the `dbt` command
     :type models: str
+    :param warn_error: If `True`, treat warnings as errors.
+    :type warn_error: bool
     :param exclude: If set, passed as the `--exclude` argument to the `dbt` command
     :type exclude: str
     :param select: If set, passed as the `--select` argument to the `dbt` command
@@ -45,6 +47,7 @@ class DbtBaseOperator(BaseOperator):
                  select=None,
                  dbt_bin='dbt',
                  verbose=True,
+                 warn_error=False,
                  full_refresh=False,
                  data=False,
                  schema=False,
@@ -64,6 +67,7 @@ class DbtBaseOperator(BaseOperator):
         self.select = select
         self.dbt_bin = dbt_bin
         self.verbose = verbose
+        self.warn_error = warn_error
         self.create_hook()
 
     def create_hook(self):
@@ -79,7 +83,8 @@ class DbtBaseOperator(BaseOperator):
             exclude=self.exclude,
             select=self.select,
             dbt_bin=self.dbt_bin,
-            verbose=self.verbose)
+            verbose=self.verbose,
+            warn_error=self.warn_error)
 
         return self.hook
 
