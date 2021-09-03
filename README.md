@@ -138,6 +138,21 @@ If you use dbt's package manager you should include all dependencies before depl
 
 For Docker users, packages specified in `packages.yml` should be included as part your docker image by calling `dbt deps` in your `Dockerfile`.
 
+## Amazon Managed Workflows for Apache Airflow (MWAA)
+
+If you use MWAA, you just need to update the `requirements.txt` file and add `airflow-dbt` and `dbt` to it.
+
+Then you can have your dbt code inside a folder `{DBT_FOLDER}` in the dags folder on S3 and configure the dbt task like below:
+
+```python
+dbt_run = DbtRunOperator(
+  task_id='dbt_run',
+  dbt_bin='/usr/local/airflow/.local/bin/dbt',
+  profiles_dir='/usr/local/airflow/dags/{DBT_FOLDER}/',
+  dir='/usr/local/airflow/dags/{DBT_FOLDER}/'
+)
+```
+
 ## License & Contributing
 
 * This is available as open source under the terms of the [MIT License](http://opensource.org/licenses/MIT).
