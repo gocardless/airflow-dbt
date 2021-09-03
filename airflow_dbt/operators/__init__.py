@@ -3,5 +3,6 @@ from .dbt_operator import (
     DbtSnapshotOperator,
     DbtRunOperator,
     DbtTestOperator,
-    DbtDocsGenerateOperator
+    DbtDocsGenerateOperator,
+    DbtDepsOperator
 )

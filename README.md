@@ -55,6 +55,8 @@ There are five operators currently implemented:
 
 * `DbtDocsGenerateOperator`
   * Calls [`dbt docs generate`](https://docs.getdbt.com/reference/commands/cmd-docs)
+* `DbtDepsOperator`
+  * Calls [`dbt deps`](https://docs.getdbt.com/docs/deps)
 * `DbtSeedOperator`
   * Calls [`dbt seed`](https://docs.getdbt.com/docs/seed)
 * `DbtSnapshotOperator`
