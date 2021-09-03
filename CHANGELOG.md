@@ -34,3 +34,7 @@ Add the `DbtSnapshotOperator`.
 Add the `DbtSeedOperator`.
 
 Support `--select` for the `DbtSnapshotOperator`.
+
+# v0.4.0
+
+Add the `DbtDocsGenerateOperator` and `DbtDepsOperator`.
