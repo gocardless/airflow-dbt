@@ -19,11 +19,8 @@ class DbtCloudBuildHook(DbtBaseHook):
     Runs the dbt command in a Cloud Build job in GCP
 
     :type dir: str
-    :param dir: The directory containing the DBT files. The logic is, if this
-        is a GCS blob compressed in tar.gz then it will be used in the build
-        process without re-uploading. Otherwise we expect "dir" to point to a
-        local path to be uploaded to the GCS prefix set in
-        "gcs_staging_location".
+    :param dir: Optional, if set the process considers that sources must be
+        uploaded prior to running the DBT job
     :type env: dict
     :param env: If set, passed to the dbt executor
     :param dbt_bin: The `dbt` CLI. Defaults to `dbt`, so assumes it's on your
@@ -54,7 +51,7 @@ class DbtCloudBuildHook(DbtBaseHook):
     def __init__(
         self,
         project_id: str,
-        dir: str = '.',
+        dir: str = None,
         gcs_staging_location: str = None,
         timeout: str = None,
         wait: bool = True,
@@ -63,34 +60,18 @@ class DbtCloudBuildHook(DbtBaseHook):
         env: Dict = None,
         dbt_bin='dbt',
     ):
-        if dir is not None and gcs_staging_location is not None:
-            logging.info(f'Files in "{dir}" will be uploaded to GCS with the '
-                         f'prefix "{gcs_staging_location}"')
-            # check the destination is a gcs directory and extract bucket and
-            # folder
-            if not gcs_object_is_directory(gcs_staging_location):
-                raise ValueError(
-                    f'The provided "gcs_sources_location": "'
-                    f'{gcs_staging_location}"'
-                    f' is not a valid gcs folder'
-                )
-            slb, slp = _parse_gcs_url(gcs_staging_location)
-            # we have provided something similar to 'gs://<slb>/<slf>'
-            self.gcs_staging_bucket = slb
-            self.gcs_staging_blob = f'{slp}dbt_staging_{uuid4().hex}.tar.gz'
-            self.upload = True
-
-        elif dir is not None and gcs_staging_location is None:
-            logging.info('Files in the "{dir}" blob will be used')
-            staging_bucket, staging_blob = _parse_gcs_url(dir)
-            if not staging_blob.endswith('.tar.gz'):
-                raise AirflowException(
-                    f'The provided blob "{dir}" to a compressed file does not '+
-                    f'have the right extension ".tar.gz'
+        logging.info(f'Files in "{dir}" will be uploaded to GCS with the '
+                     f'prefix "{gcs_staging_location}"')
+        staging_bucket, staging_blob = _parse_gcs_url(gcs_staging_location)
+        # we have provided something similar to
+        # 'gs://<staging_bucket>/<staging_blob.tar.gz>'
+        if not staging_blob.endswith('.tar.gz'):
+            raise AirflowException(
+                f'The provided blob "{staging_blob}" to a compressed file does not ' +
+                f'have the right extension ".tar.gz'
             )
-            self.gcs_staging_bucket = staging_bucket
-            self.gcs_staging_blob = staging_blob
-            self.upload = False
+        self.gcs_staging_bucket = staging_bucket
+        self.gcs_staging_blob = staging_blob
 
         self.dbt_version = dbt_version
         self.cloud_build_hook = CloudBuildHook(gcp_conn_id=gcp_conn_id)
@@ -128,7 +109,10 @@ class DbtCloudBuildHook(DbtBaseHook):
         """See: https://cloud.google.com/cloud-build/docs/api/reference/rest
         /v1/projects.builds"""
 
-        if self.upload:
+        # if we indicate that the sources are in a local directory by setting
+        # the "dir" pointing to a local path, then those sources will be
+        # uploaded to the expected blob
+        if self.dir is not None:
             self.upload_dbt_sources()
 
         results = self.cloud_build_hook.create_build(
@@ -152,7 +136,7 @@ class DbtCloudBuildHook(DbtBaseHook):
             metadata=self.env,
         )
         logging.info(
-            f'Triggered build {results["id"]}\nYou can find the logs at '
+            f'Triggered build {results["id"]}. You can find the logs at '
             f'{results["logUrl"]}'
         )
 
