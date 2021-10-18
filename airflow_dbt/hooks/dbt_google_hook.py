@@ -3,12 +3,11 @@ import os
 import tarfile
 from tempfile import NamedTemporaryFile
 from typing import Any, Dict, List
-from uuid import uuid4
 
 from airflow.exceptions import AirflowException
 from airflow.providers.google.cloud.hooks.cloud_build import CloudBuildHook
 from airflow.providers.google.cloud.hooks.gcs import (
-    GCSHook, _parse_gcs_url, gcs_object_is_directory,
+    GCSHook, _parse_gcs_url,
 )
 
 from hooks.dbt_hook import DbtBaseHook
@@ -131,7 +130,7 @@ class DbtCloudBuildHook(DbtBaseHook):
                 }
             },
             project_id=self.project_id,
-            wait=True,
+            wait=self.wait,
             timeout=self.timeout,
             metadata=self.env,
         )
