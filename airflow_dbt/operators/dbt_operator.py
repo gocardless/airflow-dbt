@@ -16,6 +16,8 @@ class DbtBaseOperator(BaseOperator):
     :param target: If set, passed as the `--target` argument to the `dbt` command
     :type dir: str
     :param dir: The directory to run the CLI in
+    :param env: If set, passed to the dbt executor
+    :type env: dict
     :type vars: str
     :param vars: If set, passed as the `--vars` argument to the `dbt` command
     :type vars: dict
@@ -53,7 +55,8 @@ class DbtBaseOperator(BaseOperator):
     def __init__(self,
                  profiles_dir=None,
                  target=None,
-                 dir='.',
+                 dir: str = '.',
+                 env: Dict = None,
                  vars=None,
                  models=None,
                  exclude=None,
@@ -73,6 +76,7 @@ class DbtBaseOperator(BaseOperator):
         self.profiles_dir = profiles_dir
         self.target = target
         self.dir = dir
+        self.env = {} if env is None else env
         self.vars = vars
         self.models = models
         self.full_refresh = full_refresh
@@ -86,6 +90,7 @@ class DbtBaseOperator(BaseOperator):
         self.base_command = base_command
         self.hook = dbt_hook if dbt_hook is not None else DbtCliHook(
             dir=dir,
+            env=self.env,
             dbt_bin=dbt_bin
         )
 
