@@ -1,4 +1,4 @@
-from typing import Any
+from typing import Any, Dict
 
 from airflow.models import BaseOperator
 from airflow.utils.decorators import apply_defaults
@@ -108,6 +108,7 @@ class DbtBaseOperator(BaseOperator):
 
 
 class DbtRunOperator(DbtBaseOperator):
+    """Runs a dbt run command"""
     @apply_defaults
     def __init__(self, profiles_dir=None, target=None, *args, **kwargs):
         super().__init__(
@@ -120,6 +121,7 @@ class DbtRunOperator(DbtBaseOperator):
 
 
 class DbtTestOperator(DbtBaseOperator):
+    """Runs a dbt test command"""
     @apply_defaults
     def __init__(self, profiles_dir=None, target=None, *args, **kwargs):
         super().__init__(
@@ -132,6 +134,7 @@ class DbtTestOperator(DbtBaseOperator):
 
 
 class DbtDocsGenerateOperator(DbtBaseOperator):
+    """Runs a dbt docs generate command"""
     @apply_defaults
     def __init__(self, profiles_dir=None, target=None, *args, **kwargs):
         super().__init__(
@@ -144,6 +147,7 @@ class DbtDocsGenerateOperator(DbtBaseOperator):
 
 
 class DbtSnapshotOperator(DbtBaseOperator):
+    """Runs a dbt snapshot command"""
     @apply_defaults
     def __init__(self, profiles_dir=None, target=None, *args, **kwargs):
         super().__init__(
@@ -156,6 +160,7 @@ class DbtSnapshotOperator(DbtBaseOperator):
 
 
 class DbtSeedOperator(DbtBaseOperator):
+    """Runs a dbt seed command"""
     @apply_defaults
     def __init__(self, profiles_dir=None, target=None, *args, **kwargs):
         super().__init__(
@@ -168,6 +173,7 @@ class DbtSeedOperator(DbtBaseOperator):
 
 
 class DbtDepsOperator(DbtBaseOperator):
+    """Runs a dbt deps command"""
     @apply_defaults
     def __init__(self, profiles_dir=None, target=None, *args, **kwargs):
         super().__init__(
