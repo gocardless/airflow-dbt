@@ -76,35 +76,28 @@ class TestDbtRunWithCloudBuild(TestCase):
         }
         self.dag = DAG('test_dag_id', default_args=args)
 
+    @patch('airflow_dbt.hooks.dbt_google_hook.NamedTemporaryFile')
     @patch('airflow_dbt.hooks.dbt_google_hook.CloudBuildHook')
     @patch('airflow_dbt.hooks.dbt_google_hook.GCSHook')
-    def test_dbt_deps(self, MockLocalCloudBuildHook, MockGCSHook):
+    def test_upload_files(self, MockGCSHook, MockCBHook, MockTempFile):
+        # Change the context provider returned name for the file
+        MockTempFile.return_value.__enter__.return_value.name = 'tempfile'
         operator = DbtRunOperator(
             task_id='test_dbt_run_on_cloud_build',
             dbt_hook=DbtCloudBuildHook(
                 project_id='my-project-id',
                 gcp_conn_id='my_conn_id',
-                gcs_staging_location='gs://my-bucket/certain-folder/'
+                dir='.',
+                gcs_staging_location='gs://my-bucket/certain-folder'
+                                     '/stored_dbt_files.tar.gz'
             ),
             dag=self.dag
         )
         operator.execute(None)
-        MockLocalCloudBuildHook.assert_called_once_with(gcp_conn_id='my_conn_id')
+        MockCBHook.assert_called_once_with(gcp_conn_id='my_conn_id')
         MockGCSHook.assert_called_once_with(gcp_conn_id='my_conn_id')
-        MockGCSHook().upload.assert_called_once()
-
-
-{
-    'steps': [{
-        'name': 'fishtownanalytics/dbt:0.21.0', 'entrypoint': '/bin/sh',
-        'args': ['-c', 'dbt', 'run'], 'env': []
-    }],
-    'source': {
-        'storageSource': {
-            'bucket': 'my-bucket',
-            'object':
-                'certain-folder/dbt_staging_c5013d9965b54386bcf84ab76e42c848'
-                '.tar.gz'
-        }
-    }
-}
+        MockGCSHook().upload.assert_called_once_with(
+            bucket_name='my-bucket',
+            object_name='certain-folder/stored_dbt_files.tar.gz',
+            filename='tempfile'
+        )
