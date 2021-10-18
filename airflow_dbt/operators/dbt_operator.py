@@ -84,7 +84,10 @@ class DbtBaseOperator(BaseOperator):
         self.verbose = verbose
         self.warn_error = warn_error
         self.base_command = base_command
-        self.hook = dbt_hook if dbt_hook is not None else DbtCliHook()
+        self.hook = dbt_hook if dbt_hook is not None else DbtCliHook(
+            dir=dir,
+            dbt_bin=dbt_bin
+        )
 
     def execute(self, context: Any):
         """Runs the provided command in the provided execution environment"""
