@@ -1,6 +1,9 @@
-from airflow_dbt.hooks.dbt_hook import DbtCliHook
+from typing import Any
+
 from airflow.models import BaseOperator
 from airflow.utils.decorators import apply_defaults
+
+from airflow_dbt.hooks.dbt_hook import DbtCliHook
 
 
 class DbtBaseOperator(BaseOperator):
@@ -30,6 +33,16 @@ class DbtBaseOperator(BaseOperator):
     :type dbt_bin: str
     :param verbose: The operator will log verbosely to the Airflow logs
     :type verbose: bool
+    :param dbt_hook: The dbt hook to use as executor. For now the
+    implemented ones are: DbtCliHook, DbtCloudBuildHook. It should be an
+    instance of one of those, or another that inherits from DbtBaseHook. If
+    not provided by default a DbtCliHook will be instantiated with the
+    provided params
+    :type dbt_hook: DbtBaseHook
+    :param base_command: The dbt sub command to run, for example for `dbt
+        run` the base_command will be `run`. If any other flag not
+        contemplated must be included it can also be added to this string
+    :type base_command: str
     """
 
     ui_color = '#d6522a'
@@ -51,6 +64,8 @@ class DbtBaseOperator(BaseOperator):
                  full_refresh=False,
                  data=False,
                  schema=False,
+                 dbt_hook=None,
+                 base_command=None,
                  *args,
                  **kwargs):
         super(DbtBaseOperator, self).__init__(*args, **kwargs)
@@ -68,13 +83,15 @@ class DbtBaseOperator(BaseOperator):
         self.dbt_bin = dbt_bin
         self.verbose = verbose
         self.warn_error = warn_error
-        self.create_hook()
+        self.base_command = base_command
+        self.hook = dbt_hook if dbt_hook is not None else DbtCliHook()
 
-    def create_hook(self):
-        self.hook = DbtCliHook(
+    def execute(self, context: Any):
+        """Runs the provided command in the provided execution environment"""
+        dbt_cli_command = self.hook.generate_dbt_cli_command(
+            base_command=self.base_command,
             profiles_dir=self.profiles_dir,
             target=self.target,
-            dir=self.dir,
             vars=self.vars,
             full_refresh=self.full_refresh,
             data=self.data,
@@ -82,63 +99,78 @@ class DbtBaseOperator(BaseOperator):
             models=self.models,
             exclude=self.exclude,
             select=self.select,
-            dbt_bin=self.dbt_bin,
-            verbose=self.verbose,
-            warn_error=self.warn_error)
-
-        return self.hook
+            warn_error=self.warn_error,
+        )
+        self.hook.run_dbt(dbt_cli_command)
 
 
 class DbtRunOperator(DbtBaseOperator):
     @apply_defaults
     def __init__(self, profiles_dir=None, target=None, *args, **kwargs):
-        super(DbtRunOperator, self).__init__(profiles_dir=profiles_dir, target=target, *args, **kwargs)
-
-    def execute(self, context):
-        self.create_hook().run_cli('run')
+        super().__init__(
+            profiles_dir=profiles_dir,
+            target=target,
+            base_command='run',
+            *args,
+            **kwargs
+        )
 
 
 class DbtTestOperator(DbtBaseOperator):
     @apply_defaults
     def __init__(self, profiles_dir=None, target=None, *args, **kwargs):
-        super(DbtTestOperator, self).__init__(profiles_dir=profiles_dir, target=target, *args, **kwargs)
-
-    def execute(self, context):
-        self.create_hook().run_cli('test')
+        super().__init__(
+            profiles_dir=profiles_dir,
+            target=target,
+            base_command='test',
+            *args,
+            **kwargs
+        )
 
 
 class DbtDocsGenerateOperator(DbtBaseOperator):
     @apply_defaults
     def __init__(self, profiles_dir=None, target=None, *args, **kwargs):
-        super(DbtDocsGenerateOperator, self).__init__(profiles_dir=profiles_dir, target=target, *args,
-                                                      **kwargs)
-
-    def execute(self, context):
-        self.create_hook().run_cli('docs', 'generate')
+        super().__init__(
+            profiles_dir=profiles_dir,
+            target=target,
+            base_command='docs generate',
+            *args,
+            **kwargs
+        )
 
 
 class DbtSnapshotOperator(DbtBaseOperator):
     @apply_defaults
     def __init__(self, profiles_dir=None, target=None, *args, **kwargs):
-        super(DbtSnapshotOperator, self).__init__(profiles_dir=profiles_dir, target=target, *args, **kwargs)
-
-    def execute(self, context):
-        self.create_hook().run_cli('snapshot')
+        super().__init__(
+            profiles_dir=profiles_dir,
+            target=target,
+            base_command='snapshot',
+            *args,
+            **kwargs
+        )
 
 
 class DbtSeedOperator(DbtBaseOperator):
     @apply_defaults
     def __init__(self, profiles_dir=None, target=None, *args, **kwargs):
-        super(DbtSeedOperator, self).__init__(profiles_dir=profiles_dir, target=target, *args, **kwargs)
-
-    def execute(self, context):
-        self.create_hook().run_cli('seed')
+        super().__init__(
+            profiles_dir=profiles_dir,
+            target=target,
+            base_command='seed',
+            *args,
+            **kwargs
+        )
 
 
 class DbtDepsOperator(DbtBaseOperator):
     @apply_defaults
     def __init__(self, profiles_dir=None, target=None, *args, **kwargs):
-        super(DbtDepsOperator, self).__init__(profiles_dir=profiles_dir, target=target, *args, **kwargs)
-
-    def execute(self, context):
-        self.create_hook().run_cli('deps')
+        super().__init__(
+            profiles_dir=profiles_dir,
+            target=target,
+            base_command='deps',
+            *args,
+            **kwargs
+        )

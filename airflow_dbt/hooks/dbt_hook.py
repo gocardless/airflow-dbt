@@ -1,142 +1,157 @@
 from __future__ import print_function
-import os
-import signal
-import subprocess
+
 import json
-from airflow.exceptions import AirflowException
+from abc import ABC, abstractmethod
+from typing import Any, Dict, List, Union
+
 from airflow.hooks.base_hook import BaseHook
+from airflow.hooks.subprocess import SubprocessHook
 
 
-class DbtCliHook(BaseHook):
+class DbtBaseHook(BaseHook, ABC):
     """
     Simple wrapper around the dbt CLI.
 
-    :param profiles_dir: If set, passed as the `--profiles-dir` argument to the `dbt` command
-    :type profiles_dir: str
-    :param target: If set, passed as the `--target` argument to the `dbt` command
     :type dir: str
     :param dir: The directory to run the CLI in
-    :type vars: str
-    :param vars: If set, passed as the `--vars` argument to the `dbt` command
-    :type vars: dict
-    :param full_refresh: If `True`, will fully-refresh incremental models.
-    :type full_refresh: bool
-    :param models: If set, passed as the `--models` argument to the `dbt` command
-    :type models: str
-    :param warn_error: If `True`, treat warnings as errors.
-    :type warn_error: bool
-    :param exclude: If set, passed as the `--exclude` argument to the `dbt` command
-    :type exclude: str
-    :param select: If set, passed as the `--select` argument to the `dbt` command
-    :type select: str
-    :param dbt_bin: The `dbt` CLI. Defaults to `dbt`, so assumes it's on your `PATH`
+    :type env: dict
+    :param env: If set, passed to the dbt executor
+    :param dbt_bin: The `dbt` CLI. Defaults to `dbt`, so assumes it's on your
+        `PATH`
     :type dbt_bin: str
-    :param output_encoding: Output encoding of bash command. Defaults to utf-8
-    :type output_encoding: str
-    :param verbose: The operator will log verbosely to the Airflow logs
-    :type verbose: bool
     """
 
-    def __init__(self,
-                 profiles_dir=None,
-                 target=None,
-                 dir='.',
-                 vars=None,
-                 full_refresh=False,
-                 data=False,
-                 schema=False,
-                 models=None,
-                 exclude=None,
-                 select=None,
-                 dbt_bin='dbt',
-                 output_encoding='utf-8',
-                 verbose=True,
-                 warn_error=False):
-        self.profiles_dir = profiles_dir
+    def __init__(self, dir: str = '.', env: Dict = None, dbt_bin='dbt'):
+        super().__init__()
         self.dir = dir
-        self.target = target
-        self.vars = vars
-        self.full_refresh = full_refresh
-        self.data = data
-        self.schema = schema
-        self.models = models
-        self.exclude = exclude
-        self.select = select
+        self.env = env if env is not None else {}
         self.dbt_bin = dbt_bin
-        self.verbose = verbose
-        self.warn_error = warn_error
-        self.output_encoding = output_encoding
 
-    def _dump_vars(self):
-        # The dbt `vars` parameter is defined using YAML. Unfortunately the standard YAML library
-        # for Python isn't very good and I couldn't find an easy way to have it formatted
-        # correctly. However, as YAML is a super-set of JSON, this works just fine.
-        return json.dumps(self.vars)
-
-    def run_cli(self, *command):
+    def generate_dbt_cli_command(
+        self,
+        base_command: str,
+        profiles_dir: str = None,
+        target: str = None,
+        vars: Dict[str, str] = None,
+        full_refresh: bool = False,
+        data: bool = False,
+        schema: bool = False,
+        models: str = None,
+        exclude: str = None,
+        select: str = None,
+        warn_error: bool = False,
+    ) -> List[str]:
         """
-        Run the dbt cli
+        Generate the command that will be run based on class properties,
+        presets and dbt commands
 
-        :param command: The dbt command to run
-        :type command: str
+        :param base_command: The dbt sub-command to run
+        :type base_command: str
+        :param profiles_dir: If set, passed as the `--profiles-dir` argument to
+            the `dbt` command
+        :type profiles_dir: str
+        :param target: If set, passed as the `--target` argument to the `dbt`
+            command
+        :type vars: Union[str, dict]
+        :param vars: If set, passed as the `--vars` argument to the `dbt`
+            command
+        :param full_refresh: If `True`, will fully-refresh incremental models.
+        :type full_refresh: bool
+        :param data:
+        :type data: bool
+        :param schema:
+        :type schema: bool
+        :param models: If set, passed as the `--models` argument to the `dbt`
+            command
+        :type models: str
+        :param warn_error: If `True`, treat warnings as errors.
+        :type warn_error: bool
+        :param exclude: If set, passed as the `--exclude` argument to the `dbt`
+        command
+        :type exclude: str
+        :param select: If set, passed as the `--select` argument to the `dbt`
+        command
+        :type select: str
         """
+        dbt_cmd = [self.dbt_bin, base_command]
 
-        dbt_cmd = [self.dbt_bin, *command]
+        if profiles_dir is not None:
+            dbt_cmd.extend(['--profiles-dir', profiles_dir])
 
-        if self.profiles_dir is not None:
-            dbt_cmd.extend(['--profiles-dir', self.profiles_dir])
+        if target is not None:
+            dbt_cmd.extend(['--target', target])
 
-        if self.target is not None:
-            dbt_cmd.extend(['--target', self.target])
+        if vars is not None:
+            dbt_cmd.extend(['--vars', json.dumps(vars)])
 
-        if self.vars is not None:
-            dbt_cmd.extend(['--vars', self._dump_vars()])
-
-        if self.data:
+        if data:
             dbt_cmd.extend(['--data'])
 
-        if self.schema:
+        if schema:
             dbt_cmd.extend(['--schema'])
 
-        if self.models is not None:
-            dbt_cmd.extend(['--models', self.models])
+        if models is not None:
+            dbt_cmd.extend(['--models', models])
 
-        if self.exclude is not None:
-            dbt_cmd.extend(['--exclude', self.exclude])
+        if exclude is not None:
+            dbt_cmd.extend(['--exclude', self])
 
-        if self.select is not None:
-            dbt_cmd.extend(['--select', self.select])
+        if select is not None:
+            dbt_cmd.extend(['--select', select])
 
-        if self.full_refresh:
+        if full_refresh:
             dbt_cmd.extend(['--full-refresh'])
 
-        if self.warn_error:
+        if warn_error:
             dbt_cmd.insert(1, '--warn-error')
 
-        if self.verbose:
-            self.log.info(" ".join(dbt_cmd))
+        return dbt_cmd
 
-        sp = subprocess.Popen(
-            dbt_cmd,
-            stdout=subprocess.PIPE,
-            stderr=subprocess.STDOUT,
+    @abstractmethod
+    def run_dbt(self, dbt_cmd: Union[str, List[str]]):
+        """Run the dbt command"""
+
+
+class DbtCliHook(DbtBaseHook):
+    """
+    Run the dbt command in the same airflow worker the task is being run.
+    This requires the `dbt` python package to be installed in it first. Also
+    the dbt_bin path might not be set in the `PATH` variable, so it could be
+    necessary to set it in the constructor.
+
+    :type dir: str
+    :param dir: The directory to run the CLI in
+    :type env: dict
+    :param env: If set, passed to the dbt executor
+    :param dbt_bin: The `dbt` CLI. Defaults to `dbt`, so assumes it's on your
+        `PATH`
+    :type dbt_bin: str
+    """
+
+    def __init__(self, dir: str = '.', env: Dict = None, dbt_bin='dbt'):
+        self.sp = SubprocessHook()
+        super().__init__(dir=dir, env=env, dbt_bin=dbt_bin)
+
+    def get_conn(self) -> Any:
+        """
+        Return the subprocess connection, which isn't implemented, just for
+        conformity
+        """
+        return self.sp.get_conn()
+
+    def run_dbt(self, dbt_cmd: Union[str, List[str]]):
+        """
+         Run the dbt cli
+
+         :param dbt_cmd: The dbt whole command to run
+         :type dbt_cmd: List[str]
+         """
+        self.sp.run_command(
+            command=dbt_cmd,
+            env=self.env,
             cwd=self.dir,
-            close_fds=True)
-        self.sp = sp
-        self.log.info("Output:")
-        line = ''
-        for line in iter(sp.stdout.readline, b''):
-            line = line.decode(self.output_encoding).rstrip()
-            self.log.info(line)
-        sp.wait()
-        self.log.info(
-            "Command exited with return code %s",
-            sp.returncode
         )
 
-        if sp.returncode:
-            raise AirflowException("dbt command failed")
-
     def on_kill(self):
-        self.log.info('Sending SIGTERM signal to dbt command')
-        os.killpg(os.getpgid(self.sp.pid), signal.SIGTERM)
+        """Kill the open subprocess if the task gets killed by Airflow"""
+        self.sp.send_sigterm()

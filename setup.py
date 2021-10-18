@@ -78,4 +78,7 @@ setup(
     cmdclass={
         'upload': UploadCommand,
     },
+    extras_require={
+        'google': 'apache-airflow-providers-google==5.0.0'
+    },
 )
