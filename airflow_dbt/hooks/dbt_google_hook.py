@@ -1,5 +1,6 @@
 import logging
 import os
+import pprint
 import tarfile
 from tempfile import NamedTemporaryFile
 from typing import Any, Dict, List
@@ -68,12 +69,11 @@ class DbtCloudBuildHook(DbtBaseHook):
         project_id: str,
         dir: str = None,
         gcs_staging_location: str = None,
-        timeout: str = None,
-        wait: bool = True,
         gcp_conn_id: str = "google_cloud_default",
         dbt_version: str = '0.21.0',
         env: Dict = None,
-        dbt_bin='dbt',
+        dbt_bin='',
+        service_account=None,
     ):
         staging_bucket, staging_blob = _parse_gcs_url(gcs_staging_location)
         # we have provided something similar to
@@ -90,8 +90,7 @@ class DbtCloudBuildHook(DbtBaseHook):
         self.cloud_build_hook = CloudBuildHook(gcp_conn_id=gcp_conn_id)
         self.gcp_conn_id = gcp_conn_id
         self.project_id = project_id
-        self.timeout = timeout
-        self.wait = wait
+        self.service_account = service_account
 
         super().__init__(dir=dir, env=env, dbt_bin=dbt_bin)
 
@@ -132,25 +131,29 @@ class DbtCloudBuildHook(DbtBaseHook):
         if self.dir is not None:
             self.upload_dbt_sources()
 
-        results = self.cloud_build_hook.create_build(
-            body={
-                'steps': [{
-                    'name': f'fishtownanalytics/dbt:{self.dbt_version}',
-                    'entrypoint': '/bin/sh',
-                    'args': ['-c', *dbt_cmd],
-                    'env': [f'{k}={v}' for k, v in self.env.items()]
-                }],
-                'source': {
-                    'storageSource': {
-                        "bucket": self.gcs_staging_bucket,
-                        "object": self.gcs_staging_blob,
-                    }
+        cloud_build_config = {
+            'steps': [{
+                'name': f'fishtownanalytics/dbt:{self.dbt_version}',
+                'args': dbt_cmd,
+                'env': [f'{k}={v}' for k, v in self.env.items()]
+            }],
+            'source': {
+                'storageSource': {
+                    "bucket": self.gcs_staging_bucket,
+                    "object": self.gcs_staging_blob,
                 }
-            },
+            }
+        }
+
+        if self.service_account is not None:
+            cloud_build_config['serviceAccount'] = self.service_account
+
+        cloud_build_config_str = pprint.pformat(cloud_build_config)
+        logging.info(f'Running the following cloud build config:\n{cloud_build_config_str}')
+
+        results = self.cloud_build_hook.create_build(
+            body=cloud_build_config,
             project_id=self.project_id,
-            # wait=self.wait,
-            # timeout=self.timeout,
-            # metadata=self.env,
         )
         logging.info(
             f'Triggered build {results["id"]}. You can find the logs at '
