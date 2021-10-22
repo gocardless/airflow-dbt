@@ -1,3 +1,4 @@
+import logging
 from typing import Any, Dict
 
 from airflow.models import BaseOperator
@@ -54,8 +55,9 @@ class DbtBaseOperator(BaseOperator):
     @apply_defaults
     def __init__(self,
                  profiles_dir=None,
-                 target=None,
+                 project_dir = None,
                  dir: str = '.',
+                 target=None,
                  env: Dict = None,
                  vars=None,
                  models=None,
@@ -74,8 +76,8 @@ class DbtBaseOperator(BaseOperator):
         super(DbtBaseOperator, self).__init__(*args, **kwargs)
 
         self.profiles_dir = profiles_dir
+        self.project_dir = project_dir if project_dir is not None else dir
         self.target = target
-        self.dir = dir
         self.env = {} if env is None else env
         self.vars = vars
         self.models = models
@@ -99,6 +101,7 @@ class DbtBaseOperator(BaseOperator):
         dbt_cli_command = self.hook.generate_dbt_cli_command(
             base_command=self.base_command,
             profiles_dir=self.profiles_dir,
+            project_dir=self.project_dir,
             target=self.target,
             vars=self.vars,
             full_refresh=self.full_refresh,
@@ -109,6 +112,7 @@ class DbtBaseOperator(BaseOperator):
             select=self.select,
             warn_error=self.warn_error,
         )
+        logging.info(f'Running dbt command "{dbt_cli_command}"')
         self.hook.run_dbt(dbt_cli_command)
 
 
