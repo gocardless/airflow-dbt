@@ -21,25 +21,25 @@ class DbtBaseHook(BaseHook, ABC):
     :type dbt_bin: str
     """
 
-    def __init__(self, dir: str = '.', env: Dict = None, dbt_bin='dbt'):
+    def __init__(self, env: Dict = None, dbt_bin='dbt'):
         super().__init__()
-        self.dir = dir
         self.env = env if env is not None else {}
         self.dbt_bin = dbt_bin
 
     def generate_dbt_cli_command(
         self,
         base_command: str,
-        profiles_dir: str = None,
-        project_dir: str = None,
+        profiles_dir: str = '.',
+        project_dir: str = '.',
         target: str = None,
-        vars: Dict[str, str] = None,
+        vars: Dict = None,
         full_refresh: bool = False,
         data: bool = False,
         schema: bool = False,
         models: str = None,
         exclude: str = None,
         select: str = None,
+        use_colors: bool = None,
         warn_error: bool = False,
     ) -> List[str]:
         """
@@ -97,25 +97,29 @@ class DbtBaseHook(BaseHook, ABC):
             dbt_cmd.extend(['--vars', json.dumps(vars)])
 
         if data:
-            dbt_cmd.extend(['--data'])
+            dbt_cmd.append('--data')
 
         if schema:
-            dbt_cmd.extend(['--schema'])
+            dbt_cmd.append('--schema')
 
         if models is not None:
             dbt_cmd.extend(['--models', models])
 
         if exclude is not None:
-            dbt_cmd.extend(['--exclude', self])
+            dbt_cmd.extend(['--exclude', exclude])
 
         if select is not None:
             dbt_cmd.extend(['--select', select])
 
         if full_refresh:
-            dbt_cmd.extend(['--full-refresh'])
+            dbt_cmd.append('--full-refresh')
 
         if warn_error:
             dbt_cmd.insert(1, '--warn-error')
+
+        if use_colors is not None:
+            colors_flag = "--use-colors" if use_colors else "--no-use-colors"
+            dbt_cmd.append(colors_flag)
 
         return dbt_cmd
 
@@ -161,7 +165,6 @@ class DbtCliHook(DbtBaseHook):
         self.sp.run_command(
             command=dbt_cmd,
             env=self.env,
-            cwd=self.dir,
         )
 
     def on_kill(self):
