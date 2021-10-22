@@ -31,6 +31,7 @@ class DbtBaseHook(BaseHook, ABC):
         self,
         base_command: str,
         profiles_dir: str = None,
+        project_dir: str = None,
         target: str = None,
         vars: Dict[str, str] = None,
         full_refresh: bool = False,
@@ -77,6 +78,9 @@ class DbtBaseHook(BaseHook, ABC):
 
         if profiles_dir is not None:
             dbt_cmd.extend(['--profiles-dir', profiles_dir])
+
+        if project_dir is not None:
+            dbt_cmd.extend(['--project-dir', project_dir])
 
         if target is not None:
             dbt_cmd.extend(['--target', target])
