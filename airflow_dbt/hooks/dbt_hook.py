@@ -74,7 +74,15 @@ class DbtBaseHook(BaseHook, ABC):
         command
         :type select: str
         """
-        dbt_cmd = [self.dbt_bin, base_command]
+        # if there's no bin do not append it. Rather generate the command
+        # without the `/path/to/dbt` prefix. That is useful for running it
+        # inside containers
+        if self.dbt_bin == '' or self.dbt_bin is None:
+            dbt_cmd = []
+        else:
+            dbt_cmd = [self.dbt_bin]
+
+        dbt_cmd.append(base_command)
 
         if profiles_dir is not None:
             dbt_cmd.extend(['--profiles-dir', profiles_dir])
