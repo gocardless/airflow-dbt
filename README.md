@@ -70,6 +70,8 @@ There are five operators currently implemented:
   * Calls [`dbt run`](https://docs.getdbt.com/docs/run)
 * `DbtTestOperator`
   * Calls [`dbt test`](https://docs.getdbt.com/docs/test)
+* `DbtCleanOperator`
+  * Calls [`dbt clean`](https://docs.getdbt.com/docs/clean)
 
 
 Each of the above operators accept the following arguments:
