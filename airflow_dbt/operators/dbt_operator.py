@@ -50,7 +50,9 @@ class DbtBaseOperator(BaseOperator):
 
     ui_color = '#d6522a'
 
-    template_fields = ['vars']
+    template_fields = ['profiles_dir', 'project_dir', 'target', 'env',
+        'vars', 'models', 'exclude', 'select', 'dbt_bin', 'verbose',
+        'warn_error', 'full_refresh', 'data', 'schema', 'base_command']
 
     @apply_defaults
     def __init__(self,
