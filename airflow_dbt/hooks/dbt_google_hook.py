@@ -9,8 +9,24 @@ from airflow.providers.google.cloud.hooks.cloud_build import CloudBuildHook
 from airflow.providers.google.cloud.hooks.gcs import (
     GCSHook, _parse_gcs_url,
 )
+from airflow.providers.google.get_provider_info import get_provider_info
+from packaging import version
 
-from hooks.dbt_hook import DbtBaseHook
+from .dbt_hook import DbtBaseHook
+
+# Check we're using the right google provider version. As composer is the
+# most brad used Airflow installation we will default to the latest version
+# composer is using
+google_providers_version = get_provider_info().get('versions')[0]
+v_min = version.parse('5.0.0')
+v_max = version.parse('6.0.0')
+v_provider = version.parse(google_providers_version)
+if not v_min <= v_provider < v_max:
+    raise Exception(
+        f'The provider "apache-airflow-providers-google" version "'
+        f'{google_providers_version}" is not compatible with the current API. '
+        f'Please install a compatible version in the range [{v_min}, {v_max})"'
+    )
 
 
 class DbtCloudBuildHook(DbtBaseHook):
@@ -59,8 +75,6 @@ class DbtCloudBuildHook(DbtBaseHook):
         env: Dict = None,
         dbt_bin='dbt',
     ):
-        logging.info(f'Files in "{dir}" will be uploaded to GCS with the '
-                     f'prefix "{gcs_staging_location}"')
         staging_bucket, staging_blob = _parse_gcs_url(gcs_staging_location)
         # we have provided something similar to
         # 'gs://<staging_bucket>/<staging_blob.tar.gz>'
@@ -87,10 +101,14 @@ class DbtCloudBuildHook(DbtBaseHook):
 
     def upload_dbt_sources(self) -> None:
         """Upload sources from local to a staging location"""
+        logging.info(
+            f'Files in "{dir}" will be uploaded to GCS with the '
+            f'prefix "gs://{self.gcs_staging_bucket}/{self.gcs_staging_blob}"'
+        )
         gcs_hook = GCSHook(gcp_conn_id=self.gcp_conn_id)
         with \
-                NamedTemporaryFile() as compressed_file, \
-                tarfile.open(compressed_file.name, "w:gz") as tar:
+            NamedTemporaryFile() as compressed_file, \
+            tarfile.open(compressed_file.name, "w:gz") as tar:
             tar.add(self.dir, arcname=os.path.basename(self.dir))
             gcs_hook.upload(
                 bucket_name=self.gcs_staging_bucket,
@@ -115,7 +133,7 @@ class DbtCloudBuildHook(DbtBaseHook):
             self.upload_dbt_sources()
 
         results = self.cloud_build_hook.create_build(
-            build={
+            body={
                 'steps': [{
                     'name': f'fishtownanalytics/dbt:{self.dbt_version}',
                     'entrypoint': '/bin/sh',
@@ -130,9 +148,9 @@ class DbtCloudBuildHook(DbtBaseHook):
                 }
             },
             project_id=self.project_id,
-            wait=self.wait,
-            timeout=self.timeout,
-            metadata=self.env,
+            # wait=self.wait,
+            # timeout=self.timeout,
+            # metadata=self.env,
         )
         logging.info(
             f'Triggered build {results["id"]}. You can find the logs at '
