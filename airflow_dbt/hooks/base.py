@@ -26,8 +26,8 @@ class DbtBaseHook(BaseHook, ABC):
     def generate_dbt_cli_command(
         self,
         base_command: str,
-        profiles_dir: str = '.',
-        project_dir: str = '.',
+        profiles_dir: str = None,
+        project_dir: str = None,
         target: str = None,
         vars: Dict = None,
         full_refresh: bool = False,

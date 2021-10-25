@@ -4,7 +4,7 @@ from typing import Any, Dict
 from airflow.models import BaseOperator
 from airflow.utils.decorators import apply_defaults
 
-from airflow_dbt.hooks.dbt_hook import DbtCliHook
+from airflow_dbt.hooks import DbtCliHook
 
 
 class DbtBaseOperator(BaseOperator):
@@ -55,26 +55,27 @@ class DbtBaseOperator(BaseOperator):
         'warn_error', 'full_refresh', 'data', 'schema', 'base_command']
 
     @apply_defaults
-    def __init__(self,
-                 profiles_dir=None,
-                 project_dir = None,
-                 dir: str = '.',
-                 target=None,
-                 env: Dict = None,
-                 vars=None,
-                 models=None,
-                 exclude=None,
-                 select=None,
-                 dbt_bin='dbt',
-                 verbose=True,
-                 warn_error=False,
-                 full_refresh=False,
-                 data=False,
-                 schema=False,
-                 dbt_hook=None,
-                 base_command=None,
-                 *args,
-                 **kwargs):
+    def __init__(
+        self,
+        profiles_dir=None,
+        project_dir=None,
+        dir: str = None,
+        target=None,
+        env: Dict = None,
+        vars=None,
+        models=None,
+        exclude=None,
+        select=None,
+        dbt_bin='dbt',
+        verbose=True,
+        warn_error=False,
+        full_refresh=False,
+        data=False,
+        schema=False,
+        dbt_hook=None,
+        base_command=None,
+        *args,
+        **kwargs):
         super(DbtBaseOperator, self).__init__(*args, **kwargs)
 
         self.profiles_dir = profiles_dir

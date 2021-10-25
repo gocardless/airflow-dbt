@@ -4,7 +4,7 @@ from typing import Any, Dict, List, Union
 
 from airflow.hooks.subprocess import SubprocessHook
 
-from hooks.base import DbtBaseHook
+from .base import DbtBaseHook
 
 
 class DbtCliHook(DbtBaseHook):
