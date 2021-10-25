@@ -2,18 +2,15 @@ from __future__ import print_function
 
 import json
 from abc import ABC, abstractmethod
-from typing import Any, Dict, List, Union
+from typing import Dict, List, Union
 
 from airflow.hooks.base_hook import BaseHook
-from airflow.hooks.subprocess import SubprocessHook
 
 
 class DbtBaseHook(BaseHook, ABC):
     """
     Simple wrapper around the dbt CLI.
 
-    :type dir: str
-    :param dir: The directory to run the CLI in
     :type env: dict
     :param env: If set, passed to the dbt executor
     :param dbt_bin: The `dbt` CLI. Defaults to `dbt`, so assumes it's on your
@@ -51,6 +48,10 @@ class DbtBaseHook(BaseHook, ABC):
         :param profiles_dir: If set, passed as the `--profiles-dir` argument to
             the `dbt` command
         :type profiles_dir: str
+        :param project_dir: If set, passed as the `--project-dir` argument to
+            the `dbt` command. It is required but by default points to the
+            current folder: '.'
+        :type project_dir: str
         :param target: If set, passed as the `--target` argument to the `dbt`
             command
         :type vars: Union[str, dict]
@@ -68,10 +69,12 @@ class DbtBaseHook(BaseHook, ABC):
         :param warn_error: If `True`, treat warnings as errors.
         :type warn_error: bool
         :param exclude: If set, passed as the `--exclude` argument to the `dbt`
-        command
+            command
         :type exclude: str
+        :param use_colors: If set it adds the flag `--use-colors` or
+            `--no-use-colors`, depending if True or False.
         :param select: If set, passed as the `--select` argument to the `dbt`
-        command
+            command
         :type select: str
         """
         # if there's no bin do not append it. Rather generate the command
@@ -126,47 +129,3 @@ class DbtBaseHook(BaseHook, ABC):
     @abstractmethod
     def run_dbt(self, dbt_cmd: Union[str, List[str]]):
         """Run the dbt command"""
-
-
-class DbtCliHook(DbtBaseHook):
-    """
-    Run the dbt command in the same airflow worker the task is being run.
-    This requires the `dbt` python package to be installed in it first. Also
-    the dbt_bin path might not be set in the `PATH` variable, so it could be
-    necessary to set it in the constructor.
-
-    :type dir: str
-    :param dir: The directory to run the CLI in
-    :type env: dict
-    :param env: If set, passed to the dbt executor
-    :param dbt_bin: The `dbt` CLI. Defaults to `dbt`, so assumes it's on your
-        `PATH`
-    :type dbt_bin: str
-    """
-
-    def __init__(self, dir: str = '.', env: Dict = None, dbt_bin='dbt'):
-        self.sp = SubprocessHook()
-        super().__init__(dir=dir, env=env, dbt_bin=dbt_bin)
-
-    def get_conn(self) -> Any:
-        """
-        Return the subprocess connection, which isn't implemented, just for
-        conformity
-        """
-        return self.sp.get_conn()
-
-    def run_dbt(self, dbt_cmd: Union[str, List[str]]):
-        """
-         Run the dbt cli
-
-         :param dbt_cmd: The dbt whole command to run
-         :type dbt_cmd: List[str]
-         """
-        self.sp.run_command(
-            command=dbt_cmd,
-            env=self.env,
-        )
-
-    def on_kill(self):
-        """Kill the open subprocess if the task gets killed by Airflow"""
-        self.sp.send_sigterm()

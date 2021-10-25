@@ -1,2 +1,3 @@
-from .dbt_hook import DbtCliHook
-from .dbt_google_hook import DbtCloudBuildHook
+from .base import DbtBaseHook
+from .cli import DbtCliHook
+from .google import DbtCloudBuildHook

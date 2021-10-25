@@ -67,7 +67,7 @@ class DbtCloudBuildHook(DbtBaseHook):
     def __init__(
         self,
         project_id: str,
-        dir: str = None,
+        # dir: str = None,
         gcs_staging_location: str = None,
         gcp_conn_id: str = "google_cloud_default",
         dbt_version: str = '0.21.0',
@@ -92,7 +92,11 @@ class DbtCloudBuildHook(DbtBaseHook):
         self.project_id = project_id
         self.service_account = service_account
 
-        super().__init__(dir=dir, env=env, dbt_bin=dbt_bin)
+        super().__init__(
+            # dir=dir,
+            env=env,
+            dbt_bin=dbt_bin
+        )
 
     def get_conn(self) -> Any:
         """Returns the cloud build connection, which is a gcp connection"""

@@ -93,7 +93,7 @@ class DbtBaseOperator(BaseOperator):
         self.warn_error = warn_error
         self.base_command = base_command
         self.hook = dbt_hook if dbt_hook is not None else DbtCliHook(
-            dir=dir,
+            # dir=dir,
             env=self.env,
             dbt_bin=dbt_bin
         )
