@@ -20,7 +20,8 @@ class TestDbtCliHook(TestCase):
     def test_vars(self):
         hook = DbtCliHook()
         generated_command = hook.generate_dbt_cli_command(
-            'run',
+            dbt_bin='dbt',
+            command='run',
             vars={"foo": "bar", "baz": "true"}
         )
 
