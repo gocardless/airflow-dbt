@@ -72,7 +72,7 @@ class DbtCloudBuildHook(DbtBaseHook):
         gcp_conn_id: str = "google_cloud_default",
         dbt_version: str = '0.21.0',
         env: Dict = None,
-        dbt_bin='',
+        dbt_bin=None,
         service_account=None,
     ):
         staging_bucket, staging_blob = _parse_gcs_url(gcs_staging_location)
@@ -93,7 +93,6 @@ class DbtCloudBuildHook(DbtBaseHook):
         self.service_account = service_account
 
         super().__init__(
-            # dir=dir,
             env=env,
             dbt_bin=dbt_bin
         )
@@ -101,23 +100,6 @@ class DbtCloudBuildHook(DbtBaseHook):
     def get_conn(self) -> Any:
         """Returns the cloud build connection, which is a gcp connection"""
         return self.cloud_build_hook.get_conn()
-
-    def upload_dbt_sources(self) -> None:
-        """Upload sources from local to a staging location"""
-        logging.info(
-            f'Files in "{dir}" will be uploaded to GCS with the '
-            f'prefix "gs://{self.gcs_staging_bucket}/{self.gcs_staging_blob}"'
-        )
-        gcs_hook = GCSHook(gcp_conn_id=self.gcp_conn_id)
-        with \
-            NamedTemporaryFile() as compressed_file, \
-            tarfile.open(compressed_file.name, "w:gz") as tar:
-            tar.add(self.dir, arcname=os.path.basename(self.dir))
-            gcs_hook.upload(
-                bucket_name=self.gcs_staging_bucket,
-                object_name=self.gcs_staging_blob,
-                filename=compressed_file.name,
-            )
 
     def run_dbt(self, dbt_cmd: List[str]):
         """
@@ -128,13 +110,6 @@ class DbtCloudBuildHook(DbtBaseHook):
          """
         """See: https://cloud.google.com/cloud-build/docs/api/reference/rest
         /v1/projects.builds"""
-
-        # if we indicate that the sources are in a local directory by setting
-        # the "dir" pointing to a local path, then those sources will be
-        # uploaded to the expected blob
-        if self.dir is not None:
-            self.upload_dbt_sources()
-
         cloud_build_config = {
             'steps': [{
                 'name': f'fishtownanalytics/dbt:{self.dbt_version}',
