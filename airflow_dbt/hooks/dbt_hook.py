@@ -29,6 +29,8 @@ class DbtCliHook(BaseHook):
     :type exclude: str
     :param select: If set, passed as the `--select` argument to the `dbt` command
     :type select: str
+    :param selector: If set, passed as the `--selector` argument to the `dbt` command
+    :type selector: str
     :param dbt_bin: The `dbt` CLI. Defaults to `dbt`, so assumes it's on your `PATH`
     :type dbt_bin: str
     :param output_encoding: Output encoding of bash command. Defaults to utf-8
@@ -48,6 +50,7 @@ class DbtCliHook(BaseHook):
                  models=None,
                  exclude=None,
                  select=None,
+                 selector=None,
                  dbt_bin='dbt',
                  output_encoding='utf-8',
                  verbose=True,
@@ -62,6 +65,7 @@ class DbtCliHook(BaseHook):
         self.models = models
         self.exclude = exclude
         self.select = select
+        self.selector = selector
         self.dbt_bin = dbt_bin
         self.verbose = verbose
         self.warn_error = warn_error
@@ -106,6 +110,9 @@ class DbtCliHook(BaseHook):
 
         if self.select is not None:
             dbt_cmd.extend(['--select', self.select])
+
+        if self.selector is not None:
+            dbt_cmd.extend(['--selector', self.selector])
 
         if self.full_refresh:
             dbt_cmd.extend(['--full-refresh'])
