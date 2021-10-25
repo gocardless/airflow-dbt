@@ -8,7 +8,8 @@ from airflow_dbt.operators.dbt_operator import (
     DbtSeedOperator,
     DbtSnapshotOperator,
     DbtRunOperator,
-    DbtTestOperator
+    DbtTestOperator,
+    DbtCleanOperator,
 )
 from airflow.utils.dates import days_ago
 
@@ -36,7 +37,11 @@ with DAG(dag_id='dbt', default_args=default_args, schedule_interval='@daily') as
     retries=0,  # Failing tests would fail the task, and we don't want Airflow to try again
   )
 
-  dbt_seed >> dbt_snapshot >> dbt_run >> dbt_test
+  dbt_clean = DbtCleanOperator(
+    task_id='dbt_clean,
+  )
+
+  dbt_seed >> dbt_snapshot >> dbt_run >> dbt_test >> dbt_clean
 ```
 
 ## Installation
@@ -65,6 +70,8 @@ There are five operators currently implemented:
   * Calls [`dbt run`](https://docs.getdbt.com/docs/run)
 * `DbtTestOperator`
   * Calls [`dbt test`](https://docs.getdbt.com/docs/test)
+* `DbtCleanOperator`
+  * Calls [`dbt clean`](https://docs.getdbt.com/docs/clean)
 
 
 Each of the above operators accept the following arguments:

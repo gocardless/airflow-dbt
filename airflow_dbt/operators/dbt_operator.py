@@ -142,3 +142,12 @@ class DbtDepsOperator(DbtBaseOperator):
 
     def execute(self, context):
         self.create_hook().run_cli('deps')
+
+
+class DbtCleanOperator(DbtBaseOperator):
+    @apply_defaults
+    def __init__(self, profiles_dir=None, target=None, *args, **kwargs):
+        super(DbtCleanOperator, self).__init__(profiles_dir=profiles_dir, target=target, *args, **kwargs)
+
+    def execute(self, context):
+        self.create_hook().run_cli('clean')

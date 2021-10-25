@@ -7,7 +7,8 @@ from airflow_dbt.operators.dbt_operator import (
     DbtSnapshotOperator,
     DbtRunOperator,
     DbtTestOperator,
-    DbtDepsOperator
+    DbtDepsOperator,
+    DbtCleanOperator,
 )
 
 
@@ -64,3 +65,12 @@ class TestDbtOperator(TestCase):
         )
         operator.execute(None)
         mock_run_cli.assert_called_once_with('deps')
+
+    @mock.patch.object(DbtCliHook, 'run_cli')
+    def test_dbt_clean(self, mock_run_cli):
+        operator = DbtCleanOperator(
+            task_id='clean',
+            dag=self.dag
+        )
+        operator.execute(None)
+        mock_run_cli.assert_called_once_with('clean')
