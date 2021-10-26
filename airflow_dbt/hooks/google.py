@@ -1,15 +1,10 @@
 import logging
-import os
 import pprint
-import tarfile
-from tempfile import NamedTemporaryFile
 from typing import Any, Dict, List
 
 from airflow.exceptions import AirflowException
 from airflow.providers.google.cloud.hooks.cloud_build import CloudBuildHook
-from airflow.providers.google.cloud.hooks.gcs import (
-    GCSHook, _parse_gcs_url,
-)
+from airflow.providers.google.cloud.hooks.gcs import _parse_gcs_url
 from airflow.providers.google.get_provider_info import get_provider_info
 from packaging import version
 
@@ -24,7 +19,7 @@ v_max = version.parse('6.0.0')
 v_provider = version.parse(google_providers_version)
 if not v_min <= v_provider < v_max:
     raise Exception(
-        f'The provider "apache-airflow-providers-google" version "'
+        'The provider "apache-airflow-providers-google" version "'
         f'{google_providers_version}" is not compatible with the current API. '
         f'Please install a compatible version in the range [{v_min}, {v_max})"'
     )
