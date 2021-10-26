@@ -251,9 +251,10 @@ class DbtCleanOperator(DbtBaseOperator):
 class DbtCloudBuildOperator(DbtBaseOperator):
     """Uses the CloudBuild Hook to run the operation in there by default"""
 
-    template_fields = ['env', 'dbt_bin', 'command', 'config',
-        'gcs_staging_location', 'project_id', 'dbt_version', 'service_account']
-
+    template_fields = [
+        'env', 'dbt_bin', 'command', 'config', 'gcs_staging_location',
+        'project_id', 'dbt_version', 'service_account'
+    ]
 
     @apply_defaults
     def __init__(

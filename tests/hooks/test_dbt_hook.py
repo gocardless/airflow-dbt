@@ -27,8 +27,9 @@ class TestDbtCliHook(TestCase):
             vars={"foo": "bar", "baz": "true"}
         )
 
-        assert generated_command == ['dbt', 'run', '--vars',
-            '{"foo": "bar", "baz": "true"}']
+        assert generated_command == [
+            'dbt', 'run', '--vars', '{"foo": "bar", "baz": "true"}'
+        ]
 
 
 class TestDbtCloudBuildHook(TestCase):
@@ -46,7 +47,7 @@ class TestDbtCloudBuildHook(TestCase):
 
         expected_body = {
             'steps': [{
-                'name': f'fishtownanalytics/dbt:0.10.10',
+                'name': 'fishtownanalytics/dbt:0.10.10',
                 'args': ['docs', 'generate'],
                 'env': ['TEST_ENV_VAR=test']
             }],

@@ -76,7 +76,7 @@ class DbtCloudBuildHook(DbtBaseHook):
         if not staging_blob.endswith('.tar.gz'):
             raise AirflowException(
                 f'The provided blob "{staging_blob}" to a compressed file does not ' +
-                f'have the right extension ".tar.gz'
+                'have the right extension ".tar.gz'
             )
         self.gcs_staging_bucket = staging_bucket
         self.gcs_staging_blob = staging_blob
