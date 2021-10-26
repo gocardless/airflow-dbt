@@ -18,10 +18,9 @@ class DbtBaseHook(BaseHook, ABC):
     :type dbt_bin: str
     """
 
-    def __init__(self, env: Dict = None, dbt_bin='dbt'):
+    def __init__(self, env: Dict = None):
         super().__init__()
         self.env = env if env is not None else {}
-        self.dbt_bin = dbt_bin
 
     def generate_dbt_cli_command(
         self,

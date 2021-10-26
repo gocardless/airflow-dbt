@@ -2,6 +2,7 @@ from __future__ import print_function
 
 from typing import Any, Dict, List, Union
 
+from airflow import AirflowException
 from airflow.hooks.subprocess import SubprocessHook
 
 from .base import DbtBaseHook
@@ -23,9 +24,9 @@ class DbtCliHook(DbtBaseHook):
     :type dbt_bin: str
     """
 
-    def __init__(self, env: Dict = None, dbt_bin='dbt'):
+    def __init__(self, env: Dict = None):
         self.sp = SubprocessHook()
-        super().__init__(env=env, dbt_bin=dbt_bin)
+        super().__init__(env=env)
 
     def get_conn(self) -> Any:
         """
@@ -41,10 +42,14 @@ class DbtCliHook(DbtBaseHook):
          :param dbt_cmd: The dbt whole command to run
          :type dbt_cmd: List[str]
          """
-        self.sp.run_command(
+        result = self.sp.run_command(
             command=dbt_cmd,
             env=self.env,
         )
+
+        if result.exit_code != 0:
+            raise AirflowException(f'Error executing the DBT command: '
+                                   f'{result.output}')
 
     def on_kill(self):
         """Kill the open subprocess if the task gets killed by Airflow"""

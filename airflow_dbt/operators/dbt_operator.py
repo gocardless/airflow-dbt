@@ -1,11 +1,10 @@
-import logging
 from typing import Any, Dict, Optional
 
 from airflow.models import BaseOperator
 from airflow.utils.decorators import apply_defaults
 
-from airflow_dbt.hooks import DbtCliHook, DbtCloudBuildHook
 from airflow_dbt.dbt_command_config import DbtCommandConfig
+from airflow_dbt.hooks import DbtCliHook, DbtCloudBuildHook
 
 
 class DbtBaseOperator(BaseOperator):
@@ -63,10 +62,11 @@ class DbtBaseOperator(BaseOperator):
     def __init__(
         self,
         env: Dict = None,
-        dbt_bin='dbt',
+        dbt_bin: Optional[str] = 'dbt',
         dbt_hook=None,
         command: Optional[str] = None,
         config: DbtCommandConfig = None,
+
         # if config was not provided we un-flatten them from the kwargs
         # global flags
         version: bool = False,
@@ -111,8 +111,8 @@ class DbtBaseOperator(BaseOperator):
         super(DbtBaseOperator, self).__init__(*vargs, **kwargs)
         self.env = {} if env is None else env
         self.dbt_bin = dbt_bin
-        self.dbt_command = command
-        self.dbt_command_config = config if config is not None else {
+        self.command = command
+        self.config = config if config is not None else {
             # global flags
             'version': version,
             'record_timing_info': record_timing_info,
@@ -155,20 +155,28 @@ class DbtBaseOperator(BaseOperator):
             'data': data,
             'schema': schema,
         }
+        self.env = env
+        self.hook = dbt_hook
+
+    def instantiate_hook(self):
+        """
+        Instantiates the underlying dbt hook. This has to be deferred until
+        after the constructor or the templated params wont be interpolated.
+        """
+        dbt_hook = self.hook
         self.hook = dbt_hook if dbt_hook is not None else DbtCliHook(
             env=self.env,
-            dbt_bin=dbt_bin
         )
 
     def execute(self, context: Any):
         """Runs the provided command in the provided execution environment"""
+        self.instantiate_hook()
+
         dbt_cli_command = self.hook.generate_dbt_cli_command(
             dbt_bin=self.dbt_bin,
-            command=self.dbt_command,
-            **self.dbt_command_config
+            command=self.command,
+            **self.config
         )
-        command_str = '\n    '.join(dbt_cli_command)
-        logging.info(f'Running dbt command "{command_str}"')
         self.hook.run_dbt(dbt_cli_command)
 
 
@@ -226,6 +234,7 @@ class DbtCloudBuildOperator(DbtBaseOperator):
     template_fields = ['env', 'dbt_bin', 'command', 'config',
         'gcs_staging_location', 'project_id', 'dbt_version', 'service_account']
 
+
     @apply_defaults
     def __init__(
         self,
@@ -235,31 +244,42 @@ class DbtCloudBuildOperator(DbtBaseOperator):
         project_id: str = None,
         gcp_conn_id: str = None,
         dbt_version: str = None,
+        dbt_bin: Optional[str] = None,
         service_account: str = None,
         *args,
         **kwargs
     ):
-
-        hook_config = {
-            'env': env,
-            'gcs_staging_location': gcs_staging_location,
-        }
-        if project_id is not None:
-            hook_config['project_id'] = project_id
-        if gcp_conn_id is not None:
-            hook_config['gcp_conn_id'] = gcp_conn_id
-        if dbt_version is not None:
-            hook_config['dbt_version'] = dbt_version
-        if service_account is not None:
-            hook_config['service_account'] = service_account
-
-        self.hook = DbtCloudBuildHook(**hook_config)
+        self.gcs_staging_location = gcs_staging_location
+        self.gcp_conn_id = gcp_conn_id
+        self.project_id = project_id
+        self.dbt_version = dbt_version
+        self.service_account = service_account
 
         super(DbtCloudBuildOperator, self).__init__(
             env=env,
-            command=None,
-            dbt_hook=self.hook,
             config=config,
+            dbt_bin=dbt_bin,
             *args,
             **kwargs
         )
+
+    def instantiate_hook(self):
+        """
+        Instantiates a Cloud build dbt hook. This has to be done out of the
+        constructor because by the time the constructor runs the params have
+        not been yet interpolated.
+        """
+        hook_config = {
+            'env': self.env,
+            'gcs_staging_location': self.gcs_staging_location,
+        }
+        if self.project_id is not None:
+            hook_config['project_id'] = self.project_id
+        if self.gcp_conn_id is not None:
+            hook_config['gcp_conn_id'] = self.gcp_conn_id
+        if self.dbt_version is not None:
+            hook_config['dbt_version'] = self.dbt_version
+        if self.service_account is not None:
+            hook_config['service_account'] = self.service_account
+
+        self.hook = DbtCloudBuildHook(**hook_config)
