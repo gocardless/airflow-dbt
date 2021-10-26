@@ -6,5 +6,6 @@ from .dbt_operator import (
     DbtTestOperator,
     DbtDocsGenerateOperator,
     DbtDepsOperator,
+    DbtCleanOperator,
     DbtCloudBuildOperator
 )
