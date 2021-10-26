@@ -1,3 +1,5 @@
+import logging
+import warnings
 from typing import Any, Dict, Optional
 
 from airflow.models import BaseOperator
@@ -66,7 +68,8 @@ class DbtBaseOperator(BaseOperator):
         dbt_hook=None,
         command: Optional[str] = None,
         config: DbtCommandConfig = None,
-
+        # dir deprecated in favor of dbt native project and profile directories
+        dir: str = None,
         # if config was not provided we un-flatten them from the kwargs
         # global flags
         version: bool = False,
@@ -105,10 +108,19 @@ class DbtBaseOperator(BaseOperator):
         fail_fast: bool = False,
         args: dict = None,
         no_compile=False,
+
         *vargs,
         **kwargs
     ):
         super(DbtBaseOperator, self).__init__(*vargs, **kwargs)
+
+        if dir is not None:
+            warnings.warn('"dir" param is deprecated in favor of dbt native '
+                          'param "project_dir"')
+            if project_dir is None:
+                logging.warning('Using "dir" as "project_dir"')
+                project_dir = dir
+
         self.env = {} if env is None else env
         self.dbt_bin = dbt_bin
         self.command = command
@@ -226,6 +238,14 @@ class DbtDepsOperator(DbtBaseOperator):
     @apply_defaults
     def __init__(self, *args, **kwargs):
         super().__init__(*args, command='deps', **kwargs)
+
+
+class DbtCleanOperator(DbtBaseOperator):
+    """Runs a dbt clean command"""
+
+    @apply_defaults
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, command='clean', **kwargs)
 
 
 class DbtCloudBuildOperator(DbtBaseOperator):
