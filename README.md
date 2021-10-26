@@ -85,6 +85,8 @@ Each of the above operators accept the following arguments:
   * If set, passed as the `--exclude` argument to the `dbt` command
 * `select`
   * If set, passed as the `--select` argument to the `dbt` command
+* `selector`
+  * If set, passed as the `--selector` argument to the `dbt` command
 * `dbt_bin`
   * The `dbt` CLI. Defaults to `dbt`, so assumes it's on your `PATH`
 * `verbose`
