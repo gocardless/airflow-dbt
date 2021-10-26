@@ -1,7 +1,7 @@
 from unittest import TestCase, mock
 from unittest.mock import patch
 
-from airflow.hooks.subprocess import SubprocessHook
+from airflow.hooks.subprocess import SubprocessHook, SubprocessResult
 
 from airflow_dbt.hooks.cli import DbtCliHook
 from airflow_dbt.hooks.google import DbtCloudBuildHook
@@ -10,6 +10,8 @@ from airflow_dbt.hooks.google import DbtCloudBuildHook
 class TestDbtCliHook(TestCase):
     @mock.patch.object(SubprocessHook, 'run_command')
     def test_sub_commands(self, mock_run_command):
+        mock_run_command.return_value = SubprocessResult(
+            exit_code=0, output='all good')
         hook = DbtCliHook()
         hook.run_dbt(['dbt', 'docs', 'generate'])
         mock_run_command.assert_called_once_with(
