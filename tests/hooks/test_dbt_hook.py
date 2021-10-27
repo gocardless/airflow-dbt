@@ -34,8 +34,11 @@ class TestDbtCliHook(TestCase):
 
 class TestDbtCloudBuildHook(TestCase):
     @patch('airflow_dbt.hooks.google.CloudBuildHook')
-    def test_create_build(self, MockCloudBuildHook):
+    @patch('airflow_dbt.hooks.google.GCSHook')
+    def test_create_build(self, _, MockCloudBuildHook):
         mock_create_build = MockCloudBuildHook().create_build
+        mock_create_build.return_value = {'id': 'test_id', 'logUrl':
+            'http://testurl.com'}
         hook = DbtCloudBuildHook(
             project_id='test_project_id',
             gcs_staging_location='gs://hello/file.tar.gz',
@@ -57,7 +60,12 @@ class TestDbtCloudBuildHook(TestCase):
                     'object': 'file.tar.gz',
                 }
             },
-            'serviceAccount': 'robot@mail.com'
+            'serviceAccount': 'projects/test_project_id/serviceAccounts/robot@mail.com',
+            'options': {
+                'logging': 'GCS_ONLY',
+
+            },
+            'logsBucket': 'hello',
         }
 
         mock_create_build.assert_called_once_with(
