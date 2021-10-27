@@ -1,11 +1,11 @@
 import logging
-import pprint
 from typing import Any, Dict, List
 
 from airflow.exceptions import AirflowException
 from airflow.providers.google.cloud.hooks.cloud_build import CloudBuildHook
-from airflow.providers.google.cloud.hooks.gcs import _parse_gcs_url
+from airflow.providers.google.cloud.hooks.gcs import GCSHook, _parse_gcs_url
 from airflow.providers.google.get_provider_info import get_provider_info
+from airflow.settings import json
 from packaging import version
 
 from .base import DbtBaseHook
@@ -113,23 +113,44 @@ class DbtCloudBuildHook(DbtBaseHook):
                     "bucket": self.gcs_staging_bucket,
                     "object": self.gcs_staging_blob,
                 }
-            }
+            },
+            'options': {
+                'logging': 'GCS_ONLY',
+            },
+            'logsBucket': self.gcs_staging_bucket,
         }
 
         if self.service_account is not None:
-            cloud_build_config['serviceAccount'] = self.service_account
+            sa_path = f'projects/{self.project_id}/serviceAccounts/' \
+                      f'{self.service_account}'
+            cloud_build_config['serviceAccount'] = sa_path
 
-        cloud_build_config_str = pprint.pformat(cloud_build_config)
-        logging.info(f'Running the following cloud build config:\n{cloud_build_config_str}')
+        cloud_build_config_str = json.dumps(cloud_build_config, indent=2)
+        logging.info(
+            f'Running the following cloud build'
+            f' config:\n{cloud_build_config_str}'
+        )
 
-        results = self.cloud_build_hook.create_build(
+        build_results = self.cloud_build_hook.create_build(
             body=cloud_build_config,
             project_id=self.project_id,
         )
-        logging.info(
-            f'Triggered build {results["id"]}. You can find the logs at '
-            f'{results["logUrl"]}'
-        )
+
+        # print logs from GCS
+        build_logs_blob = f'log-{build_results["id"]}.txt'
+        with GCSHook().provide_file(
+            bucket_name=self.gcs_staging_bucket,
+            object_name=build_logs_blob
+        ) as log_file_handle:
+            for line in log_file_handle:
+                clean_line = line.decode('utf-8').strip()
+                if not clean_line == '':
+                    logging.info(clean_line)
+
+        # print result from build
+        logging.info('Build results:\n' + json.dumps(build_results, indent=2))
+        # set the log_url class param to be read from the "links"
+        self.log_url = build_results['logUrl']
 
     def on_kill(self):
         """Stopping the build is not implemented until google providers v6"""
