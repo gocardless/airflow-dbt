@@ -7,5 +7,10 @@ from .dbt_operator import (
     DbtDocsGenerateOperator,
     DbtDepsOperator,
     DbtCleanOperator,
-    DbtCloudBuildOperator
+)
+
+from .google import (
+    DbtCloudBuildOperator,
+    CloudBuildLogsLink,
+    CloudBuildLinkPlugin,
 )
