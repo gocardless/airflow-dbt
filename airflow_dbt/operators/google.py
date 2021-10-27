@@ -4,9 +4,9 @@ from airflow.models import BaseOperatorLink
 from airflow.plugins_manager import AirflowPlugin
 from airflow.utils.decorators import apply_defaults
 
-from airflow_dbt.operators import DbtBaseOperator
+from airflow_dbt.operators.dbt_operator import DbtBaseOperator
 from airflow_dbt.dbt_command_config import DbtCommandConfig
-from airflow_dbt.hooks import DbtCloudBuildHook
+from airflow_dbt.hooks.google import DbtCloudBuildHook
 
 
 class CloudBuildLogsLink(BaseOperatorLink):

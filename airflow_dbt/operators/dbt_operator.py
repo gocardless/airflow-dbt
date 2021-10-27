@@ -6,7 +6,7 @@ from airflow.models import BaseOperator
 from airflow.utils.decorators import apply_defaults
 
 from airflow_dbt.dbt_command_config import DbtCommandConfig
-from airflow_dbt.hooks import DbtCliHook
+from airflow_dbt.hooks.cli import DbtCliHook
 
 
 class DbtBaseOperator(BaseOperator):

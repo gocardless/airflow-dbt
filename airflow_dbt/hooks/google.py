@@ -8,7 +8,7 @@ from airflow.providers.google.get_provider_info import get_provider_info
 from airflow.settings import json
 from packaging import version
 
-from .base import DbtBaseHook
+from airflow_dbt.hooks.base import DbtBaseHook
 
 # Check we're using the right google provider version. As composer is the
 # most brad used Airflow installation we will default to the latest version
