@@ -1,35 +1,171 @@
+from typing import Union
 from unittest import TestCase, mock
 from unittest.mock import patch
 
+import pytest
+from airflow import AirflowException
 from airflow.hooks.subprocess import SubprocessHook, SubprocessResult
+from pytest import mark
 
+from airflow_dbt.dbt_command_config import DbtCommandConfig
+from airflow_dbt.hooks.base import generate_dbt_cli_command
 from airflow_dbt.hooks.cli import DbtCliHook
 from airflow_dbt.hooks.google import DbtCloudBuildHook
 
 
+@mark.parametrize(
+    ["dbt_bin", "command", "params", "expected_command"], [
+        ("dbt", "run", {}, ["dbt", "run"]),
+        # check it runs with empty params
+        ("dbt", None, {}, ValueError()),  # check it fails with no command
+        (None, "run", {}, ValueError()),  # check it fails with no dbt_bin
+        ("dbt", "test", {}, ["dbt", "test"]),  # test without params
+        ("dbt", "test", {'non_existing_param'}, TypeError()),
+        # test invalid param
+        ("dbt", "test", {'--models': None}, ValueError()),
+        # test mandatory value
+        ("dbt", "test", {'--models': 3}, ValueError()),  # test wrong type
+        ("/bin/dbt", "test", {}, ["/bin/dbt", "test"]),  # test dbt path
+        ("dbt", "run", {'full_refresh': False}, ValueError()),
+        # test flags always positive
+        ('/home/airflow/.local/bin/dbt', 'run', {
+            'full_refresh': True,
+            'profiles_dir': '/opt/airflow/dags/dbt_project',
+            'project_dir': '/opt/airflow/dags/project_dir',
+            'vars': {'execution_date': '2021-01-01'},
+            'select': 'my_model',
+        }, ['/home/airflow/.local/bin/dbt', 'run', '--full-refresh',
+            '--profiles-dir', '/opt/airflow/dags/dbt_project',
+            '--project-dir', '/opt/airflow/dags/project_dir',
+            '--vars', '{"execution_date": "2021-01-01"}', '--select',
+            'my_model']),
+        # test all the params
+        ("dbt", "test", {'profiles_dir': '/path/profiles_folder'},
+            ["dbt", "test", "--profiles-dir", "/path/profiles_folder"]),
+        ("dbt", "run", {'project_dir': '/path/dbt_project_dir'},
+            ["dbt", "run", "--project-dir", "/path/dbt_project_dir"]),
+        ("dbt", "test", {'target': 'model_target'},
+            ["dbt", "test", "--target", "model_target"]),
+        ("dbt", "test", {'vars': {"hello": "world"}},
+            ["dbt", "test", "--vars", '{"hello": "world"}']),
+        ("dbt", "run", {'models': 'my_model'},
+            ["dbt", "run", "--models", "my_model"]),
+        ("dbt", "run", {'exclude': 'my_model'},
+            ["dbt", "run", "--exclude", "my_model"]),
+        ("dbt", "run", {'exclude': 'my_model'},
+            ["dbt", "run", "--exclude", "my_model"]),
+
+        # run specific params
+        ("dbt", "run", {'full_refresh': True},
+            ["dbt", "run", "--full-refresh"]),
+        ("dbt", "run", {'full_refresh': 3}, TypeError()),
+        ("dbt", "run", {'full_refresh': 'hello'}, TypeError()),
+        ("dbt", "run", {'profile': 'test_profile'},
+            ["dbt", "run", "--profile", "test_profile"]),
+
+        # docs specific params
+        ("dbt", "docs", {'no_compile': True},
+            ["dbt", "docs", "--no-compile"]),
+
+        # debug specific params
+        ("dbt", "debug", {'config_dir': '/path/to/config_dir'},
+            ["dbt", "debug", "--config-dir", '/path/to/config_dir']),
+
+        # ls specific params
+        ("dbt", "ls", {'resource_type': '/path/to/config_dir'},
+            ["dbt", "ls", "--resource-type", '/path/to/config_dir']),
+        ("dbt", "ls", {'select': 'my_model'},
+            ["dbt", "ls", "--select", "my_model"]),
+        ("dbt", "ls", {'exclude': 'my_model'},
+            ["dbt", "ls", "--exclude", "my_model"]),
+        ("dbt", "ls", {'output': 'my_model'},
+            ["dbt", "ls", "--output", "my_model"]),
+        ("dbt", "ls", {'output_keys': 'my_model'},
+            ["dbt", "ls", "--output-keys", "my_model"]),
+
+        # rpc specific params
+        ("dbt", "rpc", {'host': 'http://my-host-url.com'},
+            ["dbt", "rpc", "--host", 'http://my-host-url.com']),
+        ("dbt", "rpc", {'port': '8080'}, TypeError()),
+        ("dbt", "rpc", {'port': 8080}, ["dbt", "rpc", "--port", '8080']),
+
+        # run specific params
+        ("dbt", "run", {'fail_fast': True}, ["dbt", "run", "--fail-fast"]),
+
+        # test specific params
+        ("dbt", "test", {'data': True}, ["dbt", "test", '--data']),
+        ("dbt", "test", {'schema': True}, ["dbt", "test", '--schema']),
+        # without params
+
+    ]
+)
+def test_create_cli_command_from_params(
+    dbt_bin: str,
+    command: str,
+    params: DbtCommandConfig,
+    expected_command: Union[list[str], Exception]
+):
+    """
+    Test that the function create_cli_command_from_params returns the
+    correct
+    command or raises the correct exception
+    :type expected_command: object
+    """
+    if isinstance(expected_command, Exception):
+        with pytest.raises(expected_command.__class__):
+            generate_dbt_cli_command(dbt_bin, command, **params)
+    else:
+        assert generate_dbt_cli_command(dbt_bin, command, **params) \
+               == expected_command
+
+
 class TestDbtCliHook(TestCase):
-    @mock.patch.object(SubprocessHook, 'run_command')
+    @mock.patch.object(
+        SubprocessHook,
+        'run_command',
+        return_value=SubprocessResult(exit_code=0, output='all good')
+    )
     def test_sub_commands(self, mock_run_command):
-        mock_run_command.return_value = SubprocessResult(
-            exit_code=0, output='all good')
-        hook = DbtCliHook()
+        """
+        Test that sub commands are called with the right params
+        """
+        hook = DbtCliHook(env={'GOOGLE_APPLICATION_CREDENTIALS': 'my_creds'})
         hook.run_dbt(['dbt', 'docs', 'generate'])
         mock_run_command.assert_called_once_with(
             command=['dbt', 'docs', 'generate'],
-            env={}
+            env={'GOOGLE_APPLICATION_CREDENTIALS': 'my_creds'}
         )
 
-    def test_vars(self):
+    @mock.patch.object(
+        SubprocessHook,
+        'run_command',
+        return_value=SubprocessResult(exit_code=1, output='some error')
+    )
+    def test_run_dbt(self, mock_run_command):
+        """
+        Patch SubProcessHook to return a non-0 exit code and check we raise
+        an exception for such a result
+        """
+
+        with pytest.raises(AirflowException):
+            hook = DbtCliHook(env={'GOOGLE_APPLICATION_CREDENTIALS': 'my_creds'})
+            hook.run_dbt(['dbt', 'run'])
+            mock_run_command.assert_called_once_with(
+                command=['dbt', 'run'],
+                env={'GOOGLE_APPLICATION_CREDENTIALS': 'my_creds'}
+            )
+
+    @mock.patch.object(SubprocessHook, 'get_conn')
+    def test_subprocess_kill_called(self, mock_get_conn):
         hook = DbtCliHook()
-        generated_command = hook.generate_dbt_cli_command(
-            dbt_bin='dbt',
-            command='run',
-            vars={"foo": "bar", "baz": "true"}
-        )
+        hook.get_conn()
+        mock_get_conn.assert_called_once()
 
-        assert generated_command == [
-            'dbt', 'run', '--vars', '{"foo": "bar", "baz": "true"}'
-        ]
+    @mock.patch.object(SubprocessHook, 'send_sigterm')
+    def test_subprocess_get_conn_called(self, mock_send_sigterm):
+        hook = DbtCliHook()
+        hook.on_kill()
+        mock_send_sigterm.assert_called_once()
 
 
 class TestDbtCloudBuildHook(TestCase):
@@ -37,8 +173,9 @@ class TestDbtCloudBuildHook(TestCase):
     @patch('airflow_dbt.hooks.google.GCSHook')
     def test_create_build(self, _, MockCloudBuildHook):
         mock_create_build = MockCloudBuildHook().create_build
-        mock_create_build.return_value = {'id': 'test_id', 'logUrl':
-            'http://testurl.com'}
+        mock_create_build.return_value = {
+            'id': 'test_id', 'logUrl': 'http://testurl.com'
+        }
         hook = DbtCloudBuildHook(
             project_id='test_project_id',
             gcs_staging_location='gs://hello/file.tar.gz',
