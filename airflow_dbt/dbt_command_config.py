@@ -23,6 +23,7 @@ class DbtCommandConfig(TypedDict, total=False):
     partial_parse: bool
     use_experimental_parser: bool
     use_colors: bool
+    no_use_colors: bool
 
     # per command flags
     profiles_dir: str
@@ -31,7 +32,6 @@ class DbtCommandConfig(TypedDict, total=False):
     vars: dict
     models: str
     exclude: str
-    verbose: bool
 
     # run specific
     full_refresh: bool
@@ -45,7 +45,6 @@ class DbtCommandConfig(TypedDict, total=False):
 
     # ls specific
     resource_type: str  # models, snapshots, seeds, tests, and sources.
-    # '--resource-type'
     select: str
     models: str
     exclude: str
