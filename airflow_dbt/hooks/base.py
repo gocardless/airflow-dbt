@@ -1,224 +1,163 @@
-from __future__ import print_function
-
 import json
 from abc import ABC, abstractmethod
 from typing import Dict, List, Union
 
 from airflow.hooks.base_hook import BaseHook
 
+from airflow_dbt.dbt_command_config import DbtCommandConfig
+
+
+def generate_dbt_cli_command(
+    dbt_bin: str,
+    command: str,
+    **params: Union[str, bool],
+) -> List[str]:
+    """
+    Creates a CLI string from the keys in the dictionary. If the key is none
+    it is ignored. If the key is of type boolean the name of the key is added.
+    If the key is of type string it adds the the key prefixed with tow dashes.
+    If the key is of type integer it adds the the key prefixed with three
+    dashes.
+    dbt_bin and command are mandatory.
+    Boolean flags must always be positive.
+
+    Available params are:
+    :param command: The dbt sub-command to run
+    :type command: str
+    :param dbt_bin: Path to the dbt binary, defaults to `dbt` assumes it is
+        available in the PATH.
+    :type dbt_bin: str
+    :param command: The dbt sub command to run, for example for `dbt run`
+        the base_command will be `run`. If any other flag not contemplated
+        must be included it can also be added to this string
+    :type command: str
+    :param version: Dbt version to use, in SEMVER. Defaults
+        to the last one '0.21.0'
+    :type version: str
+    :param record_timing_info: Dbt flag to add '--record-timing-info'
+    :type record_timing_info: bool
+    :param debug: Dbt flag to add '--debug'
+    :type debug: bool
+    :param log_format: Specifies how dbt's logs should be formatted. The
+        value for this flag can be one of: text, json, or default
+    :type log_format: str
+    :param write_json: If set to no it adds the `--no-write-json` Dbt flag
+    :type write_json: bool
+    :param strict: Only for use during dbt development. It performs extra
+        validation of dbt objects and internal consistency checks during
+        compilation
+    :type strict: bool
+    :param warn_error: Converts dbt warnings into errors
+    :type warn_error: bool
+    :param partial_parse: configure partial parsing in your project, and
+        will override the value set in `profiles.yml
+    :type partial_parse: bool
+    :param use_experimental_parser: Statically analyze model files in your
+        project and, if possible, extract needed information 3x faster than
+        a full Jinja render
+    :type use_experimental_parser: bool
+    :param use_colors: Displays colors in dbt logs
+    :type use_colors: bool
+    :param profiles_dir: Path to profiles.yaml dir. Can be relative from
+        the folder the DAG is being run, which usually is the home or de
+        DAGs folder
+    :type profiles_dir: str
+    :param project_dir: Path to the dbt project you want to run. Can be
+        relative to the path the DAG is being run
+    :type project_dir: str
+    :param profile: Which profile to load. Overrides setting in
+        dbt_project.yml
+    :type profile: Which profile to load. Overrides setting in
+        dbt_project.yml
+    :param target: Which target to load for the given profile
+    :type target: str
+    :param config_dir: Sames a profile_dir
+    :type config_dir: str
+    :param resource_type: One of: model,snapshot,source,analysis,seed,
+        exposure,test,default,all
+    :type resource_type: str
+    :param vars: Supply variables to the project. This argument overrides
+        variables defined in your dbt_project.yml file. This argument should
+        be a YAML string, eg. '{my_variable: my_value}'
+    :type vars: dict
+    :param full_refresh: If specified, dbt will drop incremental models and
+        fully-recalculate the incremental table from the model definition
+    :type full_refresh: bool
+    :param data: Run data tests defined in "tests" directory.
+    :type data: bool
+    :param schema: Run constraint validations from schema.yml files
+    :type schema: bool
+    :param models: Flag used to choose a node or subset of nodes to apply
+        the command to (v0.210.0 and lower)
+    :type models: str
+    :param exclude: Nodes to exclude from the set defined with
+        select/models
+    :type exclude: str
+    :param select: Flag used to choose a node or subset of nodes to apply
+        the command to (v0.21.0 and higher)
+    :type select: str
+    :param selector: Config param to reference complex selects defined in
+        the config yaml
+    :type selector: str
+    :param output: {json,name,path,selector}
+    :type output: str
+    :param output_keys: Which keys to output
+    :type output_keys: str
+    :param host: Specify the host to listen on for the rpc server
+    :type host: str
+    :param port: Specify the port number for the rpc server
+    :type port: int
+    :param fail_fast: Stop execution upon a first test failure
+    :type fail_fast: bool
+    :param args:
+    :type args:
+    :param no_compile: Do not run "dbt compile" as part of docs generation
+    :type no_compile: bool
+    """
+    dbt_command_config_annotations = DbtCommandConfig.__annotations__
+    if not dbt_bin or not command:
+        raise ValueError("dbt_bin and command are mandatory")
+    command_params = []
+    for key, value in params.items():
+        # check that the key belongs to DbtCommandConfig keys
+        if key not in dbt_command_config_annotations.keys():
+            raise ValueError(f"{key} is not a valid key")
+        if value is not None:
+            # check that the value has the correct type from dbt_command_config_annotations
+            if type(value) != dbt_command_config_annotations[key]:
+                raise TypeError(f"{key} has to be of type {dbt_command_config_annotations[key]}")
+            # if the param is not bool it must have a non null value
+            cli_param_from_kwarg = "--" + key.replace("_", "-")
+            command_params.append(cli_param_from_kwarg)
+            if type(value) is str:
+                command_params.append(value)
+            elif type(value) is int:
+                command_params.append(str(value))
+            elif type(value) is dict:
+                command_params.append(json.dumps(value))
+            elif type(value) is bool:
+                if not value:
+                    raise ValueError(
+                        f"`{key}` cannot be false. Flags will be passed always "
+                        f"afirmatively. If you want to use a negative flag "
+                        f"such as --no-use-colors then provide "
+                        f"`no_use_colors=True`")
+    return [dbt_bin, command] + command_params
+
 
 class DbtBaseHook(BaseHook, ABC):
     """
-    Simple wrapper around the dbt CLI.
-
-    :type env: dict
-    :param env: If set, passed to the dbt executor
-    :param dbt_bin: The `dbt` CLI. Defaults to `dbt`, so assumes it's on your
-        `PATH`
-    :type dbt_bin: str
+    Simple wrapper around the dbt CLI and interface to implement dbt hooks
     """
 
     def __init__(self, env: Dict = None):
+        """
+        :param env: If set will be passed over to cloud build to run in the
+            dbt step
+        :type env: dict
+        """
         super().__init__()
         self.env = env if env is not None else {}
-
-    def generate_dbt_cli_command(
-        self,
-        dbt_bin: str = None,
-        command: str = None,
-        # global flags
-        version: bool = False,
-        record_timing_info: bool = False,
-        debug: bool = False,
-        log_format: str = None,  # either 'text', 'json' or 'default'
-        write_json: bool = None,
-        strict: bool = False,
-        warn_error: bool = False,
-        partial_parse: bool = False,
-        use_experimental_parser: bool = False,
-        use_colors: bool = None,
-        # command specific config
-        profiles_dir: str = None,
-        project_dir: str = None,
-        profile: str = None,
-        target: str = None,
-        config_dir: str = None,
-        resource_type: str = None,
-        vars: Dict = None,
-        # run specific
-        full_refresh: bool = False,
-        # ls specific
-        data: bool = False,
-        schema: bool = False,
-        models: str = None,
-        exclude: str = None,
-        select: str = None,
-        selector: str = None,
-        output: str = None,
-        output_keys: str = None,
-        # rpc specific
-        host: str = None,
-        port: str = None,
-        # test specific
-        fail_fast: bool = False,
-        args: dict = None,
-        no_compile: bool = False,
-    ) -> List[str]:
-        """
-        Generate the command that will be run based on class properties,
-        presets and dbt commands
-
-        :param command: The dbt sub-command to run
-        :type command: str
-        :param profiles_dir: If set, passed as the `--profiles-dir` argument to
-            the `dbt` command
-        :type profiles_dir: str
-        :param project_dir: If set, passed as the `--project-dir` argument to
-            the `dbt` command. It is required but by default points to the
-            current folder: '.'
-        :type project_dir: str
-        :param target: If set, passed as the `--target` argument to the `dbt`
-            command
-        :type vars: Union[str, dict]
-        :param vars: If set, passed as the `--vars` argument to the `dbt`
-            command
-        :param full_refresh: If `True`, will fully-refresh incremental models.
-        :type full_refresh: bool
-        :param data:
-        :type data: bool
-        :param schema:
-        :type schema: bool
-        :param models: If set, passed as the `--models` argument to the `dbt`
-            command
-        :type models: str
-        :param warn_error: If `True`, treat warnings as errors.
-        :type warn_error: bool
-        :param exclude: If set, passed as the `--exclude` argument to the `dbt`
-            command
-        :type exclude: str
-        :param use_colors: If set it adds the flag `--use-colors` or
-            `--no-use-colors`, depending if True or False.
-        :param select: If set, passed as the `--select` argument to the `dbt`
-            command
-        :type select: str
-        """
-
-        dbt_cmd: List[str] = []
-
-        # if there's no bin do not append it. Rather generate the command
-        # without the `/path/to/dbt` prefix. That is useful for running it
-        # inside containers that have already set the entrypoint.
-        if dbt_bin is not None and not dbt_bin == '':
-            dbt_cmd.append(dbt_bin)
-
-        # add global flags at the beginning
-        if version:
-            dbt_cmd.append('--version')
-
-        if record_timing_info:
-            dbt_cmd.append('--record-timing-info')
-
-        if debug:
-            dbt_cmd.append('--debug')
-
-        if log_format is not None:
-            dbt_cmd.extend(['--log-format', log_format])
-
-        if write_json is not None:
-            write_json_flag = '--write-json' if write_json else \
-                '--no-write-json'
-            dbt_cmd.append(write_json_flag)
-
-        if strict:
-            dbt_cmd.append('--strict')
-
-        if warn_error:
-            dbt_cmd.append('--warn-error')
-
-        if partial_parse:
-            dbt_cmd.append('--partial-parse')
-
-        if use_experimental_parser:
-            dbt_cmd.append('--use-experimental-parser')
-
-        if use_colors is not None:
-            colors_flag = "--use-colors" if use_colors else "--no-use-colors"
-            dbt_cmd.append(colors_flag)
-
-        # appends the main command
-        dbt_cmd.append(command)
-
-        # appends configuration relative to the command
-        if profiles_dir is not None:
-            dbt_cmd.extend(['--profiles-dir', profiles_dir])
-
-        if project_dir is not None:
-            dbt_cmd.extend(['--project-dir', project_dir])
-
-        if profile is not None:
-            dbt_cmd.extend(['--profile', profile])
-
-        if target is not None:
-            dbt_cmd.extend(['--target', target])
-
-        # debug specific
-        if config_dir is not None:
-            dbt_cmd.extend(['--config-dir', config_dir])
-
-        # ls specific
-        if resource_type is not None:
-            dbt_cmd.extend(['--resource-type', resource_type])
-
-        if select is not None:
-            dbt_cmd.extend(['--select', select])
-
-        if models is not None:
-            dbt_cmd.extend(['--models', models])
-
-        if exclude is not None:
-            dbt_cmd.extend(['--exclude', exclude])
-
-        if selector is not None:
-            dbt_cmd.extend(['--selector', selector])
-
-        if output is not None:
-            dbt_cmd.extend(['--output', output])
-
-        if output_keys is not None:
-            dbt_cmd.extend(['--output-keys', output_keys])
-
-        # rpc specific
-        if host is not None:
-            dbt_cmd.extend(['--host', host])
-
-        if port is not None:
-            dbt_cmd.extend(['--port', str(port)])
-
-        # run specific
-        if full_refresh:
-            dbt_cmd.append('--full-refresh')
-
-        if fail_fast:
-            dbt_cmd.append('--fail-fast')
-
-        if vars is not None:
-            dbt_cmd.extend(['--vars', json.dumps(vars)])
-
-        # run-operation specific
-        if args is not None:
-            dbt_cmd.extend(['--args', json.dumps(args)])
-
-        # test specific
-        if data:
-            dbt_cmd.append('--data')
-
-        if schema:
-            dbt_cmd.append('--schema')
-
-        if no_compile:
-            dbt_cmd.append('--no-compile')
-
-        return dbt_cmd
 
     @abstractmethod
     def run_dbt(self, dbt_cmd: Union[str, List[str]]):
