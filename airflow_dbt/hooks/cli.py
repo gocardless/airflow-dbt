@@ -11,20 +11,15 @@ from airflow_dbt.hooks.base import DbtBaseHook
 class DbtCliHook(DbtBaseHook):
     """
     Run the dbt command in the same airflow worker the task is being run.
-    This requires the `dbt` python package to be installed in it first. Also
-    the dbt_bin path might not be set in the `PATH` variable, so it could be
-    necessary to set it in the constructor.
-
-    :type dir: str
-    :param dir: The directory to run the CLI in
-    :type env: dict
-    :param env: If set, passed to the dbt executor
-    :param dbt_bin: The `dbt` CLI. Defaults to `dbt`, so assumes it's on your
-        `PATH`
-    :type dbt_bin: str
+    This requires the `dbt` python package to be installed in it first.
     """
 
     def __init__(self, env: Dict = None):
+        """
+        :type env:
+        :param env: Environment variables that will be passed to the
+            subprocess. Must be a dictionary of key-values
+        """
         self.sp = SubprocessHook()
         super().__init__(env=env)
 

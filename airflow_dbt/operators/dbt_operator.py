@@ -6,60 +6,27 @@ from airflow.models import BaseOperator
 from airflow.utils.decorators import apply_defaults
 
 from airflow_dbt.dbt_command_config import DbtCommandConfig
+from airflow_dbt.hooks.base import generate_dbt_cli_command
 from airflow_dbt.hooks.cli import DbtCliHook
 
 
 class DbtBaseOperator(BaseOperator):
     """
-    Base dbt operator
-    All other dbt operators are derived from this operator.
+    Base dbt operator. All other dbt operators should inherit from this one.
 
-    :param profiles_dir: If set, passed as the `--profiles-dir` argument to
-    the `dbt` command
-    :type profiles_dir: str
-    :param target: If set, passed as the `--target` argument to the `dbt`
-    command
-    :type dir: str
-    :param dir: The directory to run the CLI in
-    :param env: If set, passed to the dbt executor
-    :type env: dict
-    :type vars: str
-    :param vars: If set, passed as the `--vars` argument to the `dbt` command
-    :type vars: dict
-    :param full_refresh: If `True`, will fully-refresh incremental models.
-    :type full_refresh: bool
-    :param models: If set, passed as the `--models` argument to the `dbt`
-    command
-    :type models: str
-    :param warn_error: If `True`, treat warnings as errors.
-    :type warn_error: bool
-    :param exclude: If set, passed as the `--exclude` argument to the `dbt`
-    command
-    :type exclude: str
-    :param select: If set, passed as the `--select` argument to the `dbt`
-    command
-    :type select: str
-    :param dbt_bin: The `dbt` CLI. Defaults to `dbt`, so assumes it's on your
-    `PATH`
-    :type dbt_bin: str
-    :param verbose: The operator will log verbosely to the Airflow logs
-    :type verbose: bool
-    :param dbt_hook: The dbt hook to use as executor. For now the
-    implemented ones are: DbtCliHook, DbtCloudBuildHook. It should be an
-    instance of one of those, or another that inherits from DbtBaseHook. If
-    not provided by default a DbtCliHook will be instantiated with the
-    provided params
-    :type dbt_hook: DbtBaseHook
-    :param base_command: The dbt sub command to run, for example for `dbt
-        run` the base_command will be `run`. If any other flag not
-        contemplated must be included it can also be added to this string
-    :type base_command: str
+    It receives all possible dbt options in the constructor. If no hook is
+    provided it uses the DbtCliHook to run the generated command.
     """
 
     ui_color = '#d6522a'
+    # add all the str/dict params to the templates
+    dbt_str_params = [
+        key for key, value in DbtCommandConfig.__annotations__.items()
+        if value is str or value is dict
+    ]
+    template_fields = ['env', 'dbt_bin', 'command', 'config'] + dbt_str_params
 
-    template_fields = ['env', 'dbt_bin', 'command', 'config']
-
+    # noinspection PyShadowingBuiltins
     @apply_defaults
     def __init__(
         self,
@@ -72,15 +39,15 @@ class DbtBaseOperator(BaseOperator):
         dir: str = None,
         # if config was not provided we un-flatten them from the kwargs
         # global flags
-        version: bool = False,
-        record_timing_info: bool = False,
-        debug: bool = False,
+        version: bool = None,
+        record_timing_info: bool = None,
+        debug: bool = None,
         log_format: str = None,  # either 'text', 'json' or 'default'
         write_json: bool = None,
-        strict: bool = False,
-        warn_error: bool = False,
-        partial_parse: bool = False,
-        use_experimental_parser: bool = False,
+        strict: bool = None,
+        warn_error: bool = None,
+        partial_parse: bool = None,
+        use_experimental_parser: bool = None,
         use_colors: bool = None,
         # command specific config
         profiles_dir: str = None,
@@ -91,10 +58,10 @@ class DbtBaseOperator(BaseOperator):
         resource_type: str = None,
         vars: Dict = None,
         # run specific
-        full_refresh: bool = False,
+        full_refresh: bool = None,
         # ls specific
-        data: bool = False,
-        schema: bool = False,
+        data: bool = None,
+        schema: bool = None,
         models: str = None,
         exclude: str = None,
         select: str = None,
@@ -105,18 +72,129 @@ class DbtBaseOperator(BaseOperator):
         host: str = None,
         port: str = None,
         # test specific
-        fail_fast: bool = False,
+        fail_fast: bool = None,
         args: dict = None,
-        no_compile=False,
+        no_compile: bool = None,
 
         *vargs,
         **kwargs
     ):
+        """
+        :param env: Dictionary with environment variables to be used in the
+            runtime
+        :type env: dict
+        :param dbt_bin: Path to the dbt binary, defaults to `dbt` assumes it is
+            available in the PATH.
+        :type dbt_bin: str
+        :param dbt_hook: The dbt hook to use as executor. For now the
+            implemented ones are: DbtCliHook, DbtCloudBuildHook. It should be an
+            instance of one of those, or another that inherits from DbtBaseHook.
+            If not provided by default a DbtCliHook will be instantiated with
+            the provided params
+        :type dbt_hook: DbtBaseHook
+        :param command: The dbt sub command to run, for example for `dbt run`
+            the base_command will be `run`. If any other flag not contemplated
+            must be included it can also be added to this string
+        :type command: str
+        :param config: TypedDictionary which accepts all of the commands
+            related to executing dbt. This way you can separate them from the
+            ones destined for execution
+        :type config: DbtCommandConfig
+        :param dir: Legacy param to set the dbt project directory
+        :type dir: str
+        :param version: Dbt version to use, in SEMVER. Defaults
+            to the last one '0.21.0'
+        :type version: str
+        :param record_timing_info: Dbt flag to add '--record-timing-info'
+        :type record_timing_info: bool
+        :param debug: Dbt flag to add '--debug'
+        :type debug: bool
+        :param log_format: Specifies how dbt's logs should be formatted. The
+            value for this flag can be one of: text, json, or default
+        :type log_format: str
+        :param write_json: If set to no it adds the `--no-write-json` Dbt flag
+        :type write_json: bool
+        :param strict: Only for use during dbt development. It performs extra
+            validation of dbt objects and internal consistency checks during
+            compilation
+        :type strict: bool
+        :param warn_error: Converts dbt warnings into errors
+        :type warn_error: bool
+        :param partial_parse: configure partial parsing in your project, and
+            will override the value set in `profiles.yml
+        :type partial_parse: bool
+        :param use_experimental_parser: Statically analyze model files in your
+            project and, if possible, extract needed information 3x faster than
+            a full Jinja render
+        :type use_experimental_parser: bool
+        :param use_colors: Displays colors in dbt logs
+        :type use_colors: bool
+        :param profiles_dir: Path to profiles.yaml dir. Can be relative from
+            the folder the DAG is being run, which usually is the home or de
+            DAGs folder
+        :type profiles_dir: str
+        :param project_dir: Path to the dbt project you want to run. Can be
+            relative to the path the DAG is being run
+        :type project_dir: str
+        :param profile: Which profile to load. Overrides setting in
+            dbt_project.yml
+        :type profile: Which profile to load. Overrides setting in
+            dbt_project.yml
+        :param target: Which target to load for the given profile
+        :type target: str
+        :param config_dir: Sames a profile_dir
+        :type config_dir: str
+        :param resource_type: One of: model,snapshot,source,analysis,seed,
+            exposure,test,default,all
+        :type resource_type: str
+        :param vars: Supply variables to the project. This argument overrides
+            variables defined in your dbt_project.yml file. This argument should
+            be a YAML string, eg. '{my_variable: my_value}'
+        :type vars: dict
+        :param full_refresh: If specified, dbt will drop incremental models and
+            fully-recalculate the incremental table from the model definition
+        :type full_refresh: bool
+        :param data: Run data tests defined in "tests" directory.
+        :type data: bool
+        :param schema: Run constraint validations from schema.yml files
+        :type schema: bool
+        :param models: Flag used to choose a node or subset of nodes to apply
+            the command to (v0.210.0 and lower)
+        :type models: str
+        :param exclude: Nodes to exclude from the set defined with
+            select/models
+        :type exclude: str
+        :param select: Flag used to choose a node or subset of nodes to apply
+            the command to (v0.21.0 and higher)
+        :type select: str
+        :param selector: Config param to reference complex selects defined in
+            the config yaml
+        :type selector: str
+        :param output: {json,name,path,selector}
+        :type output: str
+        :param output_keys: Which keys to output
+        :type output_keys: str
+        :param host: Specify the host to listen on for the rpc server
+        :type host: str
+        :param port: Specify the port number for the rpc server
+        :type port: int
+        :param fail_fast: Stop execution upon a first test failure
+        :type fail_fast: bool
+        :param args:
+        :type args:
+        :param no_compile: Do not run "dbt compile" as part of docs generation
+        :type no_compile: bool
+        :param vargs: rest of the positional args
+        :param kwargs: rest of the keyword args
+
+        """
         super(DbtBaseOperator, self).__init__(*vargs, **kwargs)
 
         if dir is not None:
-            warnings.warn('"dir" param is deprecated in favor of dbt native '
-                          'param "project_dir"')
+            warnings.warn(
+                '"dir" param is deprecated in favor of dbt native '
+                'param "project_dir"', PendingDeprecationWarning
+            )
             if project_dir is None:
                 logging.warning('Using "dir" as "project_dir"')
                 project_dir = dir
@@ -184,7 +262,7 @@ class DbtBaseOperator(BaseOperator):
         """Runs the provided command in the provided execution environment"""
         self.instantiate_hook()
 
-        dbt_cli_command = self.hook.generate_dbt_cli_command(
+        dbt_cli_command = generate_dbt_cli_command(
             dbt_bin=self.dbt_bin,
             command=self.command,
             **self.config
