@@ -70,7 +70,7 @@ class DbtCloudBuildHook(DbtBaseHook):
         self.dbt_version = dbt_version
         self.cloud_build_hook = CloudBuildHook(gcp_conn_id=gcp_conn_id)
         self.gcp_conn_id = gcp_conn_id
-        self.project_id = self.cloud_build_hook.project_id if project_id is None else project_id
+        self.project_id = project_id or self.cloud_build_hook.project_id
         self.service_account = service_account
 
         super().__init__(env=env)
