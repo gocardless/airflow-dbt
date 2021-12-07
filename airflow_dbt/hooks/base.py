@@ -162,3 +162,4 @@ class DbtBaseHook(BaseHook, ABC):
     @abstractmethod
     def run_dbt(self, dbt_cmd: Union[str, List[str]]):
         """Run the dbt command"""
+        pass
