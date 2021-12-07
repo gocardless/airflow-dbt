@@ -120,22 +120,23 @@ def generate_dbt_cli_command(
     command_params = []
     for key, value in params.items():
         # check that the key belongs to DbtCommandConfig keys
-        if key not in dbt_command_config_annotations.keys():
+        if key not in dbt_command_config_annotations:
             raise ValueError(f"{key} is not a valid key")
         if value is not None:
+            param_value_type = type(value)
             # check that the value has the correct type from dbt_command_config_annotations
-            if type(value) != dbt_command_config_annotations[key]:
+            if param_value_type != dbt_command_config_annotations[key]:
                 raise TypeError(f"{key} has to be of type {dbt_command_config_annotations[key]}")
             # if the param is not bool it must have a non null value
             cli_param_from_kwarg = "--" + key.replace("_", "-")
             command_params.append(cli_param_from_kwarg)
-            if type(value) is str:
+            if param_value_type is str:
                 command_params.append(value)
-            elif type(value) is int:
+            elif param_value_type is int:
                 command_params.append(str(value))
-            elif type(value) is dict:
+            elif param_value_type is dict:
                 command_params.append(json.dumps(value))
-            elif type(value) is bool:
+            elif param_value_type is bool:
                 if not value:
                     raise ValueError(
                         f"`{key}` cannot be false. Flags will be passed always "
