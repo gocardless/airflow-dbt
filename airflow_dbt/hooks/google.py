@@ -49,7 +49,7 @@ class DbtCloudBuildHook(DbtBaseHook):
     def __init__(
 
         self,
-        project_id: str = None,
+        project_id: Optional[str] = None,
         gcs_staging_location: str = None,
         gcp_conn_id: str = "google_cloud_default",
         dbt_version: str = '0.21.0',
