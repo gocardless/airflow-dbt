@@ -14,7 +14,7 @@ class DbtCliHook(DbtBaseHook):
     This requires the `dbt` python package to be installed in it first.
     """
 
-    def __init__(self, env: Dict = None):
+    def __init__(self, env: Optional[Dict] = None):
         """
         :type env:
         :param env: Environment variables that will be passed to the
