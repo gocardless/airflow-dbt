@@ -53,7 +53,7 @@ class DbtCloudBuildHook(DbtBaseHook):
         gcs_staging_location: str = None,
         gcp_conn_id: str = "google_cloud_default",
         dbt_version: str = '0.21.0',
-        env: Dict = None,
+        env: Optional[Dict] = None,
         service_account=None,
     ):
         staging_bucket, staging_blob = _parse_gcs_url(gcs_staging_location)
