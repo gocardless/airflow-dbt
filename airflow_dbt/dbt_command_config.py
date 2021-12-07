@@ -1,5 +1,7 @@
 import sys
 
+# Python versions older than 3.8 have the TypedDict in a different namespace.
+# In case we find ourselves in that situation, we use the `older` import
 if sys.version_info[0] == 3 and sys.version_info[1] >= 8:
     from typing import TypedDict
 else:
