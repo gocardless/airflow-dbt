@@ -128,10 +128,10 @@ class DbtCloudBuildHook(DbtBaseHook):
             'logsBucket': self.gcs_staging_bucket,
         }
 
-        if self.service_account is not None:
-            sa_path = f'projects/{self.project_id}/serviceAccounts/' \
+        if self.service_account:
+            service_account_path_path = f'projects/{self.project_id}/serviceAccounts/' \
                       f'{self.service_account}'
-            cloud_build_config['serviceAccount'] = sa_path
+            cloud_build_config['serviceAccount'] = service_account_path_path
 
         cloud_build_config_str = json.dumps(cloud_build_config, indent=2)
         logging.info(

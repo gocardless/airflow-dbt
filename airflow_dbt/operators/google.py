@@ -72,13 +72,13 @@ class DbtCloudBuildOperator(DbtBaseOperator):
             'env': self.env,
             'gcs_staging_location': self.gcs_staging_location,
         }
-        if self.project_id is not None:
+        if self.project_id:
             hook_config['project_id'] = self.project_id
-        if self.gcp_conn_id is not None:
+        if self.gcp_conn_id:
             hook_config['gcp_conn_id'] = self.gcp_conn_id
-        if self.dbt_version is not None:
+        if self.dbt_version:
             hook_config['dbt_version'] = self.dbt_version
-        if self.service_account is not None:
+        if self.service_account:
             hook_config['service_account'] = self.service_account
 
         self.hook = DbtCloudBuildHook(**hook_config)
