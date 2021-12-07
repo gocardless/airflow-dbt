@@ -12,23 +12,36 @@ from airflow_dbt.hooks.base import generate_dbt_cli_command
 from airflow_dbt.hooks.cli import DbtCliHook
 from airflow_dbt.hooks.google import DbtCloudBuildHook
 
-
-@mark.parametrize(
-    ["dbt_bin", "command", "params", "expected_command"], [
-        ("dbt", "run", {}, ["dbt", "run"]),
+cli_command_from_params_data = [
+        [("dbt", "run", {}, ["dbt", "run"]), "regular dbt run"],
         # check it runs with empty params
-        ("dbt", None, {}, ValueError()),  # check it fails with no command
-        (None, "run", {}, ValueError()),  # check it fails with no dbt_bin
-        ("dbt", "test", {}, ["dbt", "test"]),  # test without params
-        ("dbt", "test", {'non_existing_param'}, TypeError()),
+        [("dbt", None, {}, ValueError()),  "it fails with no command"],
+        [(None, "run", {}, ValueError()),  "it fails with no dbt_bin"],
+        [("dbt", "test", {}, ["dbt", "test"]),  "test without params"],
+        [
+            ("dbt", "test", {'non_existing_param'}, TypeError()),
+            "invalid param raises TypeError"
+        ],
         # test invalid param
-        ("dbt", "test", {'--models': None}, ValueError()),
+        [
+            ("dbt", "test", {'--models': None}, ValueError()),
+            "required --models value raises ValueError if not provided"
+        ],
         # test mandatory value
-        ("dbt", "test", {'--models': 3}, ValueError()),  # test wrong type
-        ("/bin/dbt", "test", {}, ["/bin/dbt", "test"]),  # test dbt path
-        ("dbt", "run", {'full_refresh': False}, ValueError()),
+        [
+            ("dbt", "test", {'--models': 3}, ValueError()),
+            "required --models value raises ValueError if not correct type"
+        ],
+        [
+            ("/bin/dbt", "test", {}, ["/bin/dbt", "test"]),
+            "dbt_bin other than the default gets passed through"
+        ],
+        [
+            ("dbt", "run", {'full_refresh': False}, ValueError()),
+            "flags param fails if contains False value"
+        ],
         # test flags always positive
-        ('/home/airflow/.local/bin/dbt', 'run', {
+        [('/home/airflow/.local/bin/dbt', 'run', {
             'full_refresh': True,
             'profiles_dir': '/opt/airflow/dags/dbt_project',
             'project_dir': '/opt/airflow/dags/project_dir',
@@ -39,65 +52,137 @@ from airflow_dbt.hooks.google import DbtCloudBuildHook
             '--project-dir', '/opt/airflow/dags/project_dir',
             '--vars', '{"execution_date": "2021-01-01"}', '--select',
             'my_model']),
+            "fully fledged dbt run with all types of params"
+            ],
         # test all the params
-        ("dbt", "test", {'profiles_dir': '/path/profiles_folder'},
+        [
+            ("dbt", "test", {'profiles_dir': '/path/profiles_folder'},
             ["dbt", "test", "--profiles-dir", "/path/profiles_folder"]),
-        ("dbt", "run", {'project_dir': '/path/dbt_project_dir'},
+            "test profiles_dir param"
+        ],
+        [
+            ("dbt", "run", {'project_dir': '/path/dbt_project_dir'},
             ["dbt", "run", "--project-dir", "/path/dbt_project_dir"]),
-        ("dbt", "test", {'target': 'model_target'},
+            "test project_dir param"
+        ],
+        [
+            ("dbt", "test", {'target': 'model_target'},
             ["dbt", "test", "--target", "model_target"]),
-        ("dbt", "test", {'vars': {"hello": "world"}},
+            "test target param"
+        ],
+        [
+            ("dbt", "test", {'vars': {"hello": "world"}},
             ["dbt", "test", "--vars", '{"hello": "world"}']),
-        ("dbt", "run", {'models': 'my_model'},
+            "test vars param"
+        ],
+        [
+            ("dbt", "run", {'models': 'my_model'},
             ["dbt", "run", "--models", "my_model"]),
-        ("dbt", "run", {'exclude': 'my_model'},
+            "test models param"
+        ],
+        [
+            ("dbt", "run", {'exclude': 'my_model'},
             ["dbt", "run", "--exclude", "my_model"]),
-        ("dbt", "run", {'exclude': 'my_model'},
-            ["dbt", "run", "--exclude", "my_model"]),
+            "test exclude param"
+        ],
 
         # run specific params
-        ("dbt", "run", {'full_refresh': True},
+        [
+            ("dbt", "run", {'full_refresh': True},
             ["dbt", "run", "--full-refresh"]),
-        ("dbt", "run", {'full_refresh': 3}, TypeError()),
-        ("dbt", "run", {'full_refresh': 'hello'}, TypeError()),
-        ("dbt", "run", {'profile': 'test_profile'},
+            "[dbt run] test full_refresh flag succeeds"
+        ],
+        [
+            ("dbt", "run", {'full_refresh': 3}, TypeError()),
+            "[dbt run] test full_refresh param fails if not bool but integer"
+        ],
+        [
+            ("dbt", "run", {'full_refresh': 'hello'}, TypeError()),
+            "[dbt run] test full_refresh project_dir fails if not bool but string"
+        ],
+        [
+            ("dbt", "run", {'profile': 'test_profile'},
             ["dbt", "run", "--profile", "test_profile"]),
+            "[dbt run] test profile param"
+        ],
 
         # docs specific params
-        ("dbt", "docs", {'no_compile': True},
+        [
+            ("dbt", "docs", {'no_compile': True},
             ["dbt", "docs", "--no-compile"]),
-
+            "test no_compile flag succeeds"
+        ],
         # debug specific params
-        ("dbt", "debug", {'config_dir': '/path/to/config_dir'},
+        [
+            ("dbt", "debug", {'config_dir': '/path/to/config_dir'},
             ["dbt", "debug", "--config-dir", '/path/to/config_dir']),
+            "[dbt debug] test config_dir param"
+        ],
 
         # ls specific params
-        ("dbt", "ls", {'resource_type': '/path/to/config_dir'},
+        [
+            ("dbt", "ls", {'resource_type': '/path/to/config_dir'},
             ["dbt", "ls", "--resource-type", '/path/to/config_dir']),
-        ("dbt", "ls", {'select': 'my_model'},
+            "[dbt ls] test resource_type param"
+        ],
+        [
+            ("dbt", "ls", {'select': 'my_model'},
             ["dbt", "ls", "--select", "my_model"]),
-        ("dbt", "ls", {'exclude': 'my_model'},
+            "[dbt ls] test select param"
+        ],
+        [
+            ("dbt", "ls", {'exclude': 'my_model'},
             ["dbt", "ls", "--exclude", "my_model"]),
-        ("dbt", "ls", {'output': 'my_model'},
+            "[dbt ls] test exclude param"
+        ],
+        [
+            ("dbt", "ls", {'output': 'my_model'},
             ["dbt", "ls", "--output", "my_model"]),
-        ("dbt", "ls", {'output_keys': 'my_model'},
+            "[dbt ls] test output param"
+        ],
+        [
+            ("dbt", "ls", {'output_keys': 'my_model'},
             ["dbt", "ls", "--output-keys", "my_model"]),
+            "[dbt ls] test output_keys param"
+        ],
 
         # rpc specific params
-        ("dbt", "rpc", {'host': 'http://my-host-url.com'},
+        [
+            ("dbt", "rpc", {'host': 'http://my-host-url.com'},
             ["dbt", "rpc", "--host", 'http://my-host-url.com']),
-        ("dbt", "rpc", {'port': '8080'}, TypeError()),
-        ("dbt", "rpc", {'port': 8080}, ["dbt", "rpc", "--port", '8080']),
+            "[dbt rpc] test host param"
+        ],
+        [
+            ("dbt", "rpc", {'port': '8080'}, TypeError()),
+            "[dbt rpc] test port param fails if not integer"
+        ],
+        [
+            ("dbt", "rpc", {'port': 8080}, ["dbt", "rpc", "--port", '8080']),
+            "[dbt rpc] test port param"
+        ],
 
         # run specific params
-        ("dbt", "run", {'fail_fast': True}, ["dbt", "run", "--fail-fast"]),
+        [
+            ("dbt", "run", {'fail_fast': True}, ["dbt", "run", "--fail-fast"]),
+            "[dbt run] test fail_fast flag succeeds"
+        ],
 
         # test specific params
-        ("dbt", "test", {'data': True}, ["dbt", "test", '--data']),
-        ("dbt", "test", {'schema': True}, ["dbt", "test", '--schema']),
-        # without params
-
+        [
+            ("dbt", "test", {'data': True}, ["dbt", "test", '--data']),
+            "[dbt test] test data flag succeeds"
+        ],
+        [
+            ("dbt", "test", {'schema': True}, ["dbt", "test", '--schema']),
+            "[dbt test] test schema flag succeeds"
+        ],
     ]
+
+
+@mark.parametrize(
+    ["dbt_bin", "command", "params", "expected_command"],
+    [test_params[0] for test_params in cli_command_from_params_data],
+    ids=[test_params[1] for test_params in cli_command_from_params_data]
 )
 def test_create_cli_command_from_params(
     dbt_bin: str,
