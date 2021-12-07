@@ -158,7 +158,7 @@ class DbtBaseHook(BaseHook, ABC):
         :type env: dict
         """
         super().__init__()
-        self.env = env if env is not None else {}
+        self.env = env or {}
 
     @abstractmethod
     def run_dbt(self, dbt_cmd: Union[str, List[str]]):
