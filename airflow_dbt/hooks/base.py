@@ -115,8 +115,10 @@ def generate_dbt_cli_command(
     :type no_compile: bool
     """
     dbt_command_config_annotations = DbtCommandConfig.__annotations__
-    if not dbt_bin or not command:
-        raise ValueError("dbt_bin and command are mandatory")
+    if not dbt_bin:
+        raise ValueError("dbt_bin is mandatory")
+    if not command:
+        raise ValueError("command mandatory")
     command_params = []
     for key, value in params.items():
         # check that the key belongs to DbtCommandConfig keys
