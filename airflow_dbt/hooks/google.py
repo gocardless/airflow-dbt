@@ -1,5 +1,5 @@
 import logging
-from typing import Any, Dict, List
+from typing import Any, Dict, List, Optional
 
 from airflow.exceptions import AirflowException
 from airflow.providers.google.cloud.hooks.cloud_build import CloudBuildHook
@@ -10,19 +10,38 @@ from packaging import version
 
 from airflow_dbt.hooks.base import DbtBaseHook
 
-# Check we're using the right google provider version. As composer is the
-# most brad used Airflow installation we will default to the latest version
-# composer is using
-google_providers_version = get_provider_info().get('versions')[0]
-v_min = version.parse('5.0.0')
-v_max = version.parse('6.0.0')
-v_provider = version.parse(google_providers_version)
-if not v_min <= v_provider < v_max:
-    raise Exception(
-        'The provider "apache-airflow-providers-google" version "'
-        f'{google_providers_version}" is not compatible with the current API. '
-        f'Please install a compatible version in the range [{v_min}, {v_max})"'
-    )
+MIN_AIRFLOW_GOOGLE_PROVIDER_VERSION = '5.0.0'
+MAX_AIRFLOW_GOOGLE_PROVIDER_VERSION = '6.0.0'
+
+
+def check_google_provider_version(version_min: str, version_max: str) -> None:
+    """
+    Check we're using the right Google provider version. As Cloud Composer is
+    the most broadly used Airflow installation we will default to the latest
+    version composer is using
+
+    :param version_min: Minimum version of the Google provider in semver format
+    :type version_min: str
+    :param version_max: Maximum version of the Google provider in semver format
+    :type version_max: str
+    """
+    google_providers_version = get_provider_info().get('versions')[0]
+    version_min = version.parse(version_min)
+    version_max = version.parse(version_max)
+    version_provider = version.parse(google_providers_version)
+    if not version_min <= version_provider < version_max:
+        raise Exception(
+            'The provider "apache-airflow-providers-google" version "'
+            f'{google_providers_version}" is not compatible with the current '
+            'API. Please install a compatible version in the range '
+            f'>={version_min}, <{version_max}"'
+        )
+
+
+check_google_provider_version(
+    version_min=MIN_AIRFLOW_GOOGLE_PROVIDER_VERSION,
+    version_max=MAX_AIRFLOW_GOOGLE_PROVIDER_VERSION,
+)
 
 
 class DbtCloudBuildHook(DbtBaseHook):

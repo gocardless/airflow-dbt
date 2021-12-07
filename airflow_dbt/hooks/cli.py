@@ -1,6 +1,6 @@
 from __future__ import print_function
 
-from typing import Any, Dict, List, Union
+from typing import Any, Dict, List, Optional, Union
 
 from airflow import AirflowException
 from airflow.hooks.subprocess import SubprocessHook

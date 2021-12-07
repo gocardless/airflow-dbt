@@ -1,6 +1,6 @@
 import json
 from abc import ABC, abstractmethod
-from typing import Dict, List, Union
+from typing import Dict, List, Optional, Union
 
 from airflow.hooks.base_hook import BaseHook
 
@@ -121,7 +121,6 @@ def generate_dbt_cli_command(
         raise ValueError("command mandatory")
     command_params = []
     for key, value in params.items():
-        # check that the key belongs to DbtCommandConfig keys
         if key not in dbt_command_config_annotations:
             raise ValueError(f"{key} is not a valid key")
         if value is not None:

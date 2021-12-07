@@ -10,7 +10,10 @@ from pytest import mark
 from airflow_dbt.dbt_command_config import DbtCommandConfig
 from airflow_dbt.hooks.base import generate_dbt_cli_command
 from airflow_dbt.hooks.cli import DbtCliHook
-from airflow_dbt.hooks.google import DbtCloudBuildHook
+from airflow_dbt.hooks.google import (
+    DbtCloudBuildHook,
+    check_google_provider_version,
+)
 
 cli_command_from_params_data = [
         [("dbt", "run", {}, ["dbt", "run"]), "regular dbt run"],
@@ -294,3 +297,35 @@ class TestDbtCloudBuildHook(TestCase):
             body=expected_body,
             project_id='test_project_id'
         )
+
+
+@pytest.mark.parametrize(
+    ['min_version', 'max_version', 'versions', 'expected_result'],
+    [
+        ('5.0.0', '6.0.0', ['5.0.0', '4.0.0'], None),
+        ('5.0.0', '6.0.0', ['4.0.0', '3.0.0'], Exception),
+        ('5.0.0', '6.0.0', ['6.0.0', '5.0.0'], Exception),
+    ],
+    ids=[
+        'provider version within min and max allowed versions',
+        'provider version below min allowed versions',
+        'provider version above max allowed versions',
+    ]
+)
+@patch('airflow_dbt.hooks.google.get_provider_info')
+def test_check_google_provider_version(
+    mock_get_provider_info,
+    min_version,
+    max_version,
+    versions,
+    expected_result
+):
+    mock_get_provider_info.return_value = {'versions': versions}
+    if expected_result is None:
+        check_google_provider_version(
+            min_version,
+            max_version
+        )
+    else:
+        with pytest.raises(expected_result):
+            check_google_provider_version(min_version, max_version)
