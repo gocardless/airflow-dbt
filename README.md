@@ -67,7 +67,7 @@ There are five operators currently implemented:
   * Calls [`dbt test`](https://docs.getdbt.com/docs/test)
 
 
-Each of the above operators accept the following arguments:
+Each of the above operators accept the arguments in [here (dbt_command_config)](airflow_dbt/dbt_command_config.py). The main ones being:
 
 * `profiles_dir`
   * If set, passed as the `--profiles-dir` argument to the `dbt` command
@@ -95,6 +95,68 @@ Each of the above operators accept the following arguments:
 Typically you will want to use the `DbtRunOperator`, followed by the `DbtTestOperator`, as shown earlier.
 
 You can also use the hook directly. Typically this can be used for when you need to combine the `dbt` command with another task in the same operators, for example running `dbt docs` and uploading the docs to somewhere they can be served from.
+
+## A more advanced example:
+
+If want to run your `dbt` project other tan in the airflow worker you can use
+the `DbtCloudBuildHook` and apply it to the `DbtBaseOperator` or simply use the
+provided `DbtCloudBuildOperator`:
+
+```python
+from airflow_dbt.hooks import DbtCloudBuildHook
+from airflow_dbt.operators import DbtBaseOperator, DbtCloudBuildOperator
+DbtBaseOperator(
+    task_id='provide_hook',
+    command='run',
+    use_colors=False,
+    config={
+        'profiles_dir': './jaffle-shop',
+        'project_dir': './jaffle-shop',
+    },
+    dbt_hook=DbtCloudBuildHook(
+        gcs_staging_location='gs://my-bucket/compressed-dbt-project.tar.gz'
+    )
+)
+
+DbtCloudBuildOperator(
+    task_id='default_hook_cloudbuild',
+    gcs_staging_location='gs://my-bucket/compressed-dbt-project.tar.gz',
+    command='run',
+    use_colors=False,
+    config={
+        'profiles_dir': './jaffle-shop',
+        'project_dir': './jaffle-shop',
+    },
+)
+```
+
+You can either define the dbt params/config/flags in the operator or you can 
+group them into a `config` param. They both have validation, but only the config
+has templating. The following two tasks are equivalent:
+
+```python
+from airflow_dbt.operators.dbt_operator import DbtBaseOperator
+
+DbtBaseOperator(
+    task_id='config_param',
+    command='run',
+    config={
+        'profiles_dir': './jaffle-shop',
+        'project_dir': './jaffle-shop',
+        'dbt_bin': '/usr/local/airflow/.local/bin/dbt',
+        'use_colors': False
+    }
+)
+
+DbtBaseOperator(
+    task_id='flat_config',
+    command='run',
+    profiles_dir='./jaffle-shop',
+    project_dir='./jaffle-shop',
+    dbt_bin='/usr/local/airflow/.local/bin/dbt',
+    use_colors=False
+)
+```
 
 ## Building Locally
 
@@ -147,7 +209,9 @@ If you use MWAA, you just need to update the `requirements.txt` file and add `ai
 Then you can have your dbt code inside a folder `{DBT_FOLDER}` in the dags folder on S3 and configure the dbt task like below:
 
 ```python
-dbt_run = DbtRunOperator(
+from airflow_dbt.operators.dbt_operator import DbtRunOperator 
+
+dbt_run=DbtRunOperator(
   task_id='dbt_run',
   dbt_bin='/usr/local/airflow/.local/bin/dbt',
   profiles_dir='/usr/local/airflow/dags/{DBT_FOLDER}/',
