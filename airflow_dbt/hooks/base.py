@@ -151,7 +151,7 @@ class DbtBaseHook(BaseHook, ABC):
     Simple wrapper around the dbt CLI and interface to implement dbt hooks
     """
 
-    def __init__(self, env: Dict = None):
+    def __init__(self, env: Optional[Dict] = None):
         """
         :param env: If set will be passed over to cloud build to run in the
             dbt step
