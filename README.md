@@ -38,7 +38,7 @@ with DAG(dag_id='dbt', default_args=default_args, schedule_interval='@daily') as
   )
 
   dbt_clean = DbtCleanOperator(
-    task_id='dbt_clean,
+    task_id='dbt_clean',
   )
 
   dbt_seed >> dbt_snapshot >> dbt_run >> dbt_test >> dbt_clean
