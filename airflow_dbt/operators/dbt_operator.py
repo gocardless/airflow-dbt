@@ -19,6 +19,7 @@ class DbtBaseOperator(BaseOperator):
     """
 
     ui_color = '#d6522a'
+    ui_fgcolor = "white"
     # add all the str/dict params to the templates
     dbt_str_params = [
         key for key, value in DbtCommandConfig.__annotations__.items()
