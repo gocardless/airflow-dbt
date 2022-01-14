@@ -30,7 +30,7 @@ def check_google_provider_version(version_min: str, version_max: str) -> None:
     version_max = version.parse(version_max)
     version_provider = version.parse(google_providers_version)
     if not version_min <= version_provider < version_max:
-        raise Exception(
+        raise ImportError(
             'The provider "apache-airflow-providers-google" version "'
             f'{google_providers_version}" is not compatible with the current '
             'API. Please install a compatible version in the range '
@@ -112,9 +112,9 @@ class DbtCloudBuildHook(DbtBaseHook):
             'steps': [{
                 # use the official dbt docker image from dockerhub
                 'name': f'{self.dbt_image}:{self.dbt_version}',
-                'entrypoint': 'bash',
-                'args': ['-c'] + dbt_cmd,
-                'env': [f'{k}={v}' for k, v in self.env.items()]
+                'entrypoint': dbt_cmd[0],
+                'args': dbt_cmd[1:],
+                'env': [f'{k}={v}' for k, v in self.env.items()],
             }],
             'source': {
                 'storageSource': {
@@ -141,26 +141,30 @@ class DbtCloudBuildHook(DbtBaseHook):
             f' config:\n{dump(cloud_build_config)}'
         )
 
-        build_results = self.cloud_build_hook.create_build(
-            body=cloud_build_config,
-            project_id=self.project_id,
-        )
-        logging.info("Finished running")
-        # print logs from GCS
-        build_logs_blob = f'log-{build_results["id"]}.txt'
-        with GCSHook().provide_file(
-            bucket_name=self.gcs_staging_bucket,
-            object_name=build_logs_blob
-        ) as log_file_handle:
-            for line in log_file_handle:
-                clean_line = line.decode('utf-8').strip()
-                if not clean_line == '':
-                    logging.info(clean_line)
+        try:
+            build_results = self.cloud_build_hook.create_build(
+                body=cloud_build_config,
+                project_id=self.project_id,
+            )
 
-        # print result from build
-        logging.info('Build results:\n' + dump(build_results))
-        # set the log_url class param to be read from the "links"
-        return build_results
+            logging.info("Finished running: " + dump(build_results))
+            # print logs from GCS
+            build_logs_blob = f'log-{build_results["id"]}.txt'
+            with GCSHook().provide_file(
+                bucket_name=self.gcs_staging_bucket,
+                object_name=build_logs_blob
+            ) as log_file_handle:
+                for line in log_file_handle:
+                    clean_line = line.decode('utf-8').strip()
+                    if clean_line:
+                        logging.info(clean_line)
+
+            # print result from build
+            logging.info('Build results:\n' + dump(build_results))
+            # set the log_url class param to be read from the "links"
+            return build_results
+        except Exception as ex:
+            raise AirflowException("Exception running the build: ", str(ex))
 
     def on_kill(self):
         """Stopping the build is not implemented until google providers v6"""
