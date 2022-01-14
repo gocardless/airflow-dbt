@@ -72,6 +72,7 @@ class DbtCloudBuildHook(DbtBaseHook):
         gcs_staging_location: str = None,
         gcp_conn_id: str = "google_cloud_default",
         dbt_version: str = '0.21.0',
+        dbt_image: str = 'fishtownanalytics/dbt',
         env: Optional[Dict] = None,
         service_account: Optional[str] = None,
     ):
@@ -87,6 +88,7 @@ class DbtCloudBuildHook(DbtBaseHook):
         self.gcs_staging_blob = staging_blob
 
         self.dbt_version = dbt_version
+        self.dbt_image = dbt_image
         self.cloud_build_hook = CloudBuildHook(gcp_conn_id=gcp_conn_id)
         self.gcp_conn_id = gcp_conn_id
         self.project_id = project_id or self.cloud_build_hook.project_id
@@ -109,7 +111,7 @@ class DbtCloudBuildHook(DbtBaseHook):
         cloud_build_config = {
             'steps': [{
                 # use the official dbt docker image from dockerhub
-                'name': f'fishtownanalytics/dbt:{self.dbt_version}',
+                'name': f'{self.dbt_image}:{self.dbt_version}',
                 'args': dbt_cmd,
                 'env': [f'{k}={v}' for k, v in self.env.items()]
             }],
