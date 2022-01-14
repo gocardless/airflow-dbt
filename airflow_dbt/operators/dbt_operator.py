@@ -1,12 +1,13 @@
 import logging
 import warnings
-from typing import Any, Dict, Optional
+from typing import Any, Dict, List, Optional
 
 from airflow.models import BaseOperator
+# noinspection PyDeprecation
 from airflow.utils.decorators import apply_defaults
 
 from airflow_dbt.dbt_command_config import DbtCommandConfig
-from airflow_dbt.hooks.base import generate_dbt_cli_command
+from airflow_dbt.hooks.base import DbtBaseHook, generate_dbt_cli_command
 from airflow_dbt.hooks.cli import DbtCliHook
 
 
@@ -269,7 +270,7 @@ class DbtBaseOperator(BaseOperator):
     def instantiate_hook(self):
         """
         Instantiates the underlying dbt hook. This has to be deferred until
-        after the constructor or the templated params wont be interpolated.
+        after the constructor or the templated params won't be interpolated.
         """
         dbt_hook = self.dbt_hook
         self.dbt_hook = dbt_hook if dbt_hook is not None else DbtCliHook(
@@ -290,6 +291,7 @@ class DbtBaseOperator(BaseOperator):
 class DbtRunOperator(DbtBaseOperator):
     """Runs a dbt run command"""
 
+    # noinspection PyDeprecation
     @apply_defaults
     def __init__(self, *args, **kwargs):
         super().__init__(*args, command='run', **kwargs)
@@ -298,6 +300,7 @@ class DbtRunOperator(DbtBaseOperator):
 class DbtTestOperator(DbtBaseOperator):
     """Runs a dbt test command"""
 
+    # noinspection PyDeprecation
     @apply_defaults
     def __init__(self, *args, **kwargs):
         super().__init__(*args, command='test', **kwargs)
@@ -306,6 +309,7 @@ class DbtTestOperator(DbtBaseOperator):
 class DbtDocsGenerateOperator(DbtBaseOperator):
     """Runs a dbt docs generate command"""
 
+    # noinspection PyDeprecation
     @apply_defaults
     def __init__(self, *args, **kwargs):
         super().__init__(*args, command='docs generate', **kwargs)
@@ -314,6 +318,7 @@ class DbtDocsGenerateOperator(DbtBaseOperator):
 class DbtSnapshotOperator(DbtBaseOperator):
     """Runs a dbt snapshot command"""
 
+    # noinspection PyDeprecation
     @apply_defaults
     def __init__(self, *args, **kwargs):
         super().__init__(*args, command='snapshot', **kwargs)
@@ -322,6 +327,7 @@ class DbtSnapshotOperator(DbtBaseOperator):
 class DbtSeedOperator(DbtBaseOperator):
     """Runs a dbt seed command"""
 
+    # noinspection PyDeprecation
     @apply_defaults
     def __init__(self, *args, **kwargs):
         super().__init__(*args, command='seed', **kwargs)
@@ -330,6 +336,7 @@ class DbtSeedOperator(DbtBaseOperator):
 class DbtDepsOperator(DbtBaseOperator):
     """Runs a dbt deps command"""
 
+    # noinspection PyDeprecation
     @apply_defaults
     def __init__(self, *args, **kwargs):
         super().__init__(*args, command='deps', **kwargs)
@@ -338,6 +345,7 @@ class DbtDepsOperator(DbtBaseOperator):
 class DbtCleanOperator(DbtBaseOperator):
     """Runs a dbt clean command"""
 
+    # noinspection PyDeprecation
     @apply_defaults
     def __init__(self, *args, **kwargs):
         super().__init__(*args, command='clean', **kwargs)
