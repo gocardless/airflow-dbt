@@ -1,12 +1,9 @@
-from typing import Dict, Optional
-
 from airflow.models import BaseOperatorLink
 from airflow.plugins_manager import AirflowPlugin
 from airflow.utils.decorators import apply_defaults
 
-from airflow_dbt.operators.dbt_operator import DbtBaseOperator
-from airflow_dbt.dbt_command_config import DbtCommandConfig
 from airflow_dbt.hooks.google import DbtCloudBuildHook
+from airflow_dbt.operators.dbt_operator import DbtBaseOperator
 
 
 class CloudBuildLogsLink(BaseOperatorLink):
@@ -27,13 +24,9 @@ class CloudBuildLinkPlugin(AirflowPlugin):
 class DbtCloudBuildOperator(DbtBaseOperator):
     """Uses the CloudBuild Hook to run the operation in there by default"""
 
-    template_fields = [
-        'env', 'dbt_bin', 'command', 'config', 'gcs_staging_location',
-        'project_id', 'dbt_version', 'service_account'
-    ]
-
     operator_extra_links = [CloudBuildLogsLink]
 
+    # noinspection PyDeprecation
     @apply_defaults
     def __init__(
         self,
@@ -55,6 +48,11 @@ class DbtCloudBuildOperator(DbtBaseOperator):
             *args,
             **kwargs
         )
+
+        self.template_fields += [
+            'gcs_staging_location', 'project_id', 'dbt_version',
+            'service_account'
+        ]
 
     def instantiate_hook(self):
         """
