@@ -32,8 +32,9 @@ class DbtCloudBuildOperator(DbtBaseOperator):
         self,
         gcs_staging_location: str,
         project_id: str = None,
-        gcp_conn_id: str = None,
-        dbt_version: str = None,
+        gcp_conn_id: str = "google_cloud_default",
+        dbt_version: str = '1.0.0',
+        dbt_image: str = 'fishtownanalytics/dbt',
         service_account: str = None,
         *args,
         **kwargs
@@ -42,6 +43,7 @@ class DbtCloudBuildOperator(DbtBaseOperator):
         self.gcp_conn_id = gcp_conn_id
         self.project_id = project_id
         self.dbt_version = dbt_version
+        self.dbt_image = dbt_image
         self.service_account = service_account
 
         super(DbtCloudBuildOperator, self).__init__(
@@ -60,17 +62,12 @@ class DbtCloudBuildOperator(DbtBaseOperator):
         constructor because by the time the constructor runs the params have
         not been yet interpolated.
         """
-        hook_config = {
-            'env': self.dbt_env,
-            'gcs_staging_location': self.gcs_staging_location,
-        }
-        if self.project_id:
-            hook_config['project_id'] = self.project_id
-        if self.gcp_conn_id:
-            hook_config['gcp_conn_id'] = self.gcp_conn_id
-        if self.dbt_version:
-            hook_config['dbt_version'] = self.dbt_version
-        if self.service_account:
-            hook_config['service_account'] = self.service_account
-
-        self.dbt_hook = DbtCloudBuildHook(**hook_config)
+        self.dbt_hook = DbtCloudBuildHook(
+            env=self.dbt_env,
+            gcs_staging_location=self.gcs_staging_location,
+            gcp_conn_id=self.gcp_conn_id,
+            dbt_version=self.dbt_version,
+            dbt_image=self.dbt_image,
+            service_account=self.service_account,
+            project_id=self.project_id,
+        )
