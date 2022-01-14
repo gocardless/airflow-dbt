@@ -129,7 +129,10 @@ def generate_dbt_cli_command(
             if param_value_type != dbt_command_config_annotations[key]:
                 raise TypeError(f"{key} has to be of type {dbt_command_config_annotations[key]}")
             # if the param is not bool it must have a non null value
-            cli_param_from_kwarg = "--" + key.replace("_", "-")
+            flag_prefix = ''
+            if param_value_type is bool and not value:
+                flag_prefix = 'no-'
+            cli_param_from_kwarg = "--" + flag_prefix + key.replace("_", "-")
             command_params.append(cli_param_from_kwarg)
             if param_value_type is str:
                 command_params.append(value)
@@ -137,14 +140,8 @@ def generate_dbt_cli_command(
                 command_params.append(str(value))
             elif param_value_type is dict:
                 command_params.append(json.dumps(value))
-            elif param_value_type is bool:
-                if not value:
-                    raise ValueError(
-                        f"`{key}` cannot be false. Flags will be passed always "
-                        f"afirmatively. If you want to use a negative flag "
-                        f"such as --no-use-colors then provide "
-                        f"`no_use_colors=True`")
-    return [dbt_bin, command] + command_params
+
+    return [dbt_bin, *command_params, command]
 
 
 class DbtBaseHook(BaseHook, ABC):
