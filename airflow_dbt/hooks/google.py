@@ -5,7 +5,7 @@ from airflow.exceptions import AirflowException
 from airflow.providers.google.cloud.hooks.cloud_build import CloudBuildHook
 from airflow.providers.google.cloud.hooks.gcs import GCSHook, _parse_gcs_url
 from airflow.providers.google.get_provider_info import get_provider_info
-from airflow.settings import json
+from airflow.utils.yaml import dump
 from packaging import version
 
 from airflow_dbt.hooks.base import DbtBaseHook
@@ -71,7 +71,7 @@ class DbtCloudBuildHook(DbtBaseHook):
         project_id: Optional[str] = None,
         gcs_staging_location: str = None,
         gcp_conn_id: str = "google_cloud_default",
-        dbt_version: str = '0.21.0',
+        dbt_version: str = '1.0.0',
         dbt_image: str = 'fishtownanalytics/dbt',
         env: Optional[Dict] = None,
         service_account: Optional[str] = None,
@@ -112,7 +112,8 @@ class DbtCloudBuildHook(DbtBaseHook):
             'steps': [{
                 # use the official dbt docker image from dockerhub
                 'name': f'{self.dbt_image}:{self.dbt_version}',
-                'args': dbt_cmd,
+                'entrypoint': 'bash',
+                'args': ['-c'] + dbt_cmd,
                 'env': [f'{k}={v}' for k, v in self.env.items()]
             }],
             'source': {
@@ -135,17 +136,16 @@ class DbtCloudBuildHook(DbtBaseHook):
                       f'{self.service_account}'
             cloud_build_config['serviceAccount'] = service_account_path_path
 
-        cloud_build_config_str = json.dumps(cloud_build_config, indent=2)
         logging.info(
             f'Running the following cloud build'
-            f' config:\n{cloud_build_config_str}'
+            f' config:\n{dump(cloud_build_config)}'
         )
 
         build_results = self.cloud_build_hook.create_build(
             body=cloud_build_config,
             project_id=self.project_id,
         )
-
+        logging.info("Finished running")
         # print logs from GCS
         build_logs_blob = f'log-{build_results["id"]}.txt'
         with GCSHook().provide_file(
@@ -158,7 +158,7 @@ class DbtCloudBuildHook(DbtBaseHook):
                     logging.info(clean_line)
 
         # print result from build
-        logging.info('Build results:\n' + json.dumps(build_results, indent=2))
+        logging.info('Build results:\n' + dump(build_results))
         # set the log_url class param to be read from the "links"
         return build_results
 
