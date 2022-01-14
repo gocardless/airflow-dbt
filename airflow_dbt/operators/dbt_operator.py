@@ -280,10 +280,28 @@ class DbtBaseOperator(BaseOperator):
     def execute(self, context: Any):
         """Runs the provided command in the provided execution environment"""
         self.instantiate_hook()
+        dbt_base_params = [
+            'log_format', 'version', 'use_colors', 'warn_error',
+            'partial_parse', 'use_experimental_parser', 'profiles_dir'
+        ]
+
+        dbt_base_config = {
+            key: val
+            for key, val in self.dbt_config.items()
+            if key in dbt_base_params
+        }
+
+        dbt_command_config = {
+            key: val
+            for key, val in self.dbt_config.items()
+            if key not in dbt_base_params
+        }
+
         self.dbt_cli_command = generate_dbt_cli_command(
             dbt_bin=self.dbt_bin,
             command=self.dbt_command,
-            **self.dbt_config
+            base_config=dbt_base_config,
+            command_config=dbt_command_config,
         )
         self.dbt_hook.run_dbt(self.dbt_cli_command)
 

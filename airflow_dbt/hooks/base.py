@@ -2,15 +2,44 @@ import json
 from abc import ABC, abstractmethod
 from typing import Dict, List, Optional, Union
 
+# noinspection PyDeprecation
 from airflow.hooks.base_hook import BaseHook
 
 from airflow_dbt.dbt_command_config import DbtCommandConfig
 
 
+def render_config(config: dict[str, Union[str,bool]]) -> List[str]:
+    """Renders a dictionary of options into a list of cli strings"""
+    dbt_command_config_annotations = DbtCommandConfig.__annotations__
+    command_params = []
+    for key, value in config.items():
+        if key not in dbt_command_config_annotations:
+            raise ValueError(f"{key} is not a valid key")
+        if value is not None:
+            param_value_type = type(value)
+            # check that the value has the correct type from dbt_command_config_annotations
+            if param_value_type != dbt_command_config_annotations[key]:
+                raise TypeError(f"{key} has to be of type {dbt_command_config_annotations[key]}")
+            # if the param is not bool it must have a non null value
+            flag_prefix = ''
+            if param_value_type is bool and not value:
+                flag_prefix = 'no-'
+            cli_param_from_kwarg = "--" + flag_prefix + key.replace("_", "-")
+            command_params.append(cli_param_from_kwarg)
+            if param_value_type is str:
+                command_params.append(value)
+            elif param_value_type is int:
+                command_params.append(str(value))
+            elif param_value_type is dict:
+                command_params.append(json.dumps(value))
+    return command_params
+
+
 def generate_dbt_cli_command(
     dbt_bin: str,
     command: str,
-    **params: Union[str, bool],
+    base_config: Dict[str, Union[str, bool]],
+    command_config: Dict[str, Union[str, bool]],
 ) -> List[str]:
     """
     Creates a CLI string from the keys in the dictionary. If the key is none
@@ -114,34 +143,13 @@ def generate_dbt_cli_command(
     :param no_compile: Do not run "dbt compile" as part of docs generation
     :type no_compile: bool
     """
-    dbt_command_config_annotations = DbtCommandConfig.__annotations__
     if not dbt_bin:
         raise ValueError("dbt_bin is mandatory")
     if not command:
         raise ValueError("command mandatory")
-    command_params = []
-    for key, value in params.items():
-        if key not in dbt_command_config_annotations:
-            raise ValueError(f"{key} is not a valid key")
-        if value is not None:
-            param_value_type = type(value)
-            # check that the value has the correct type from dbt_command_config_annotations
-            if param_value_type != dbt_command_config_annotations[key]:
-                raise TypeError(f"{key} has to be of type {dbt_command_config_annotations[key]}")
-            # if the param is not bool it must have a non null value
-            flag_prefix = ''
-            if param_value_type is bool and not value:
-                flag_prefix = 'no-'
-            cli_param_from_kwarg = "--" + flag_prefix + key.replace("_", "-")
-            command_params.append(cli_param_from_kwarg)
-            if param_value_type is str:
-                command_params.append(value)
-            elif param_value_type is int:
-                command_params.append(str(value))
-            elif param_value_type is dict:
-                command_params.append(json.dumps(value))
-
-    return [dbt_bin, *command_params, command]
+    base_params = render_config(base_config)
+    command_params = render_config(command_config)
+    return [dbt_bin, *base_params, command, *command_params]
 
 
 class DbtBaseHook(BaseHook, ABC):
