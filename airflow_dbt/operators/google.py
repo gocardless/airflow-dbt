@@ -38,12 +38,9 @@ class DbtCloudBuildOperator(DbtBaseOperator):
     def __init__(
         self,
         gcs_staging_location: str,
-        env: Dict = None,
-        config: DbtCommandConfig = None,
         project_id: str = None,
         gcp_conn_id: str = None,
         dbt_version: str = None,
-        dbt_bin: Optional[str] = None,
         service_account: str = None,
         *args,
         **kwargs
@@ -55,9 +52,6 @@ class DbtCloudBuildOperator(DbtBaseOperator):
         self.service_account = service_account
 
         super(DbtCloudBuildOperator, self).__init__(
-            env=env,
-            config=config,
-            dbt_bin=dbt_bin,
             *args,
             **kwargs
         )
@@ -69,7 +63,7 @@ class DbtCloudBuildOperator(DbtBaseOperator):
         not been yet interpolated.
         """
         hook_config = {
-            'env': self.env,
+            'env': self.dbt_env,
             'gcs_staging_location': self.gcs_staging_location,
         }
         if self.project_id:
@@ -81,4 +75,4 @@ class DbtCloudBuildOperator(DbtBaseOperator):
         if self.service_account:
             hook_config['service_account'] = self.service_account
 
-        self.hook = DbtCloudBuildHook(**hook_config)
+        self.dbt_hook = DbtCloudBuildHook(**hook_config)

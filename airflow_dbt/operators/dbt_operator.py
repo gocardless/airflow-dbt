@@ -21,13 +21,20 @@ class DbtBaseOperator(BaseOperator):
     ui_color = '#d6522a'
     ui_fgcolor = "white"
     # add all the str/dict params to the templates
-    dbt_str_params = [
-        key for key, value in DbtCommandConfig.__annotations__.items()
-        if value is str or value is dict
-    ]
-    template_fields = ['env', 'dbt_bin', 'command', 'config'] + dbt_str_params
+    template_fields = ['dbt_env', 'dbt_bin', 'dbt_command', 'dbt_config']
+    template_fields_renderers = {
+        'dbt_env': 'json',
+        'dbt_config': 'json',
+    }
 
-    # noinspection PyShadowingBuiltins
+    dbt_env: Dict
+    dbt_bin: str
+    dbt_command: str
+    dbt_config: Dict
+    dbt_hook: DbtBaseHook
+    dbt_cli_command: List[str]
+
+    # noinspection PyShadowingBuiltins, PyDeprecation
     @apply_defaults
     def __init__(
         self,
@@ -200,10 +207,13 @@ class DbtBaseOperator(BaseOperator):
                 logging.warning('Using "dir" as "project_dir"')
                 project_dir = dir
 
-        self.env = {} if env is None else env
+        self.dbt_env = env or {}
         self.dbt_bin = dbt_bin
-        self.command = command
-        self.config = config if config is not None else {
+        self.dbt_command = command
+        # defaults to an empty dict
+        config = config or {}
+        # overrides with the top level config
+        config.update({
             # global flags
             'version': version,
             'record_timing_info': record_timing_info,
@@ -245,30 +255,36 @@ class DbtBaseOperator(BaseOperator):
             # test specific
             'data': data,
             'schema': schema,
+        })
+        # filter out None values from the constructor
+        config = {
+            key: val
+            for key, val in config.items()
+            if val is not None
         }
-        self.env = env
-        self.hook = dbt_hook
+        self.dbt_config = config
+        self.dbt_env = env
+        self.dbt_hook = dbt_hook
 
     def instantiate_hook(self):
         """
         Instantiates the underlying dbt hook. This has to be deferred until
         after the constructor or the templated params wont be interpolated.
         """
-        dbt_hook = self.hook
-        self.hook = dbt_hook if dbt_hook is not None else DbtCliHook(
-            env=self.env,
+        dbt_hook = self.dbt_hook
+        self.dbt_hook = dbt_hook if dbt_hook is not None else DbtCliHook(
+            env=self.dbt_env,
         )
 
     def execute(self, context: Any):
         """Runs the provided command in the provided execution environment"""
         self.instantiate_hook()
-
-        dbt_cli_command = generate_dbt_cli_command(
+        self.dbt_cli_command = generate_dbt_cli_command(
             dbt_bin=self.dbt_bin,
-            command=self.command,
-            **self.config
+            command=self.dbt_command,
+            **self.dbt_config
         )
-        self.hook.run_dbt(dbt_cli_command)
+        self.dbt_hook.run_dbt(self.dbt_cli_command)
 
 
 class DbtRunOperator(DbtBaseOperator):
