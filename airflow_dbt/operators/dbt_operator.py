@@ -31,7 +31,7 @@ class DbtBaseOperator(BaseOperator):
     dbt_env: Dict
     dbt_bin: str
     dbt_command: str
-    dbt_config: Dict
+    dbt_config: DbtCommandConfig
     dbt_hook: DbtBaseHook
     dbt_cli_command: List[str]
 
