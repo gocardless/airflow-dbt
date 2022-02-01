@@ -1,30 +1,16 @@
-from airflow.models import BaseOperatorLink
-from airflow.plugins_manager import AirflowPlugin
 from airflow.utils.decorators import apply_defaults
 
 from airflow_dbt.hooks.google import DbtCloudBuildHook
 from airflow_dbt.operators.dbt_operator import DbtBaseOperator
 
 
-class CloudBuildLogsLink(BaseOperatorLink):
-    """Add a link to the logs generated from a build in cloud build"""
-    name = "Cloud Build Logs"
-
-    def get_link(self, operator, _):
-        """Returns the log url for the cloud build logs stored as class prop"""
-        return operator.log_url
-
-
-class CloudBuildLinkPlugin(AirflowPlugin):
-    """Registers the extra links"""
-    name = "cloud_build_link_plugin"
-    operator_extra_links = [CloudBuildLogsLink()]
-
-
 class DbtCloudBuildOperator(DbtBaseOperator):
-    """Uses the CloudBuild Hook to run the operation in there by default"""
+    """Uses the CloudBuild Hook to run the provided dbt config"""
 
-    operator_extra_links = [CloudBuildLogsLink]
+    template_fields = DbtBaseOperator.template_fields + [
+        'gcs_staging_location', 'project_id', 'dbt_version',
+        'service_account', 'dbt_artifacts_dest'
+    ]
 
     # noinspection PyDeprecation
     @apply_defaults
@@ -35,10 +21,12 @@ class DbtCloudBuildOperator(DbtBaseOperator):
         gcp_conn_id: str = "google_cloud_default",
         dbt_version: str = '1.0.0',
         dbt_image: str = 'fishtownanalytics/dbt',
+        dbt_artifacts_dest: str = None,
         service_account: str = None,
         *args,
         **kwargs
     ):
+        self.dbt_artifacts_dest = dbt_artifacts_dest
         self.gcs_staging_location = gcs_staging_location
         self.gcp_conn_id = gcp_conn_id
         self.project_id = project_id
@@ -50,11 +38,6 @@ class DbtCloudBuildOperator(DbtBaseOperator):
             *args,
             **kwargs
         )
-
-        self.template_fields += [
-            'gcs_staging_location', 'project_id', 'dbt_version',
-            'service_account'
-        ]
 
     def instantiate_hook(self):
         """
@@ -70,4 +53,6 @@ class DbtCloudBuildOperator(DbtBaseOperator):
             dbt_image=self.dbt_image,
             service_account=self.service_account,
             project_id=self.project_id,
+            dbt_project_dir=self.dbt_config.get('project_dir'),
+            dbt_artifacts_dest=self.dbt_artifacts_dest,
         )
