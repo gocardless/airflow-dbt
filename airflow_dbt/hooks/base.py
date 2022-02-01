@@ -8,7 +8,7 @@ from airflow.hooks.base_hook import BaseHook
 from airflow_dbt.dbt_command_config import DbtCommandConfig
 
 
-def render_config(config: dict[str, Union[str,bool]]) -> List[str]:
+def render_config(config: dict[str, Union[str, bool]]) -> List[str]:
     """Renders a dictionary of options into a list of cli strings"""
     dbt_command_config_annotations = DbtCommandConfig.__annotations__
     command_params = []
@@ -51,6 +51,11 @@ def generate_dbt_cli_command(
     Boolean flags must always be positive.
 
     Available params are:
+    :param command_config: Specific params for the commands
+    :type command_config: dict
+    :param base_config: Params that apply to the `dbt` program regardless of
+        the command it is running
+    :type base_config: dict
     :param command: The dbt sub-command to run
     :type command: str
     :param dbt_bin: Path to the dbt binary, defaults to `dbt` assumes it is
@@ -60,88 +65,6 @@ def generate_dbt_cli_command(
         the base_command will be `run`. If any other flag not contemplated
         must be included it can also be added to this string
     :type command: str
-    :param version: Dbt version to use, in SEMVER. Defaults
-        to the last one '0.21.0'
-    :type version: str
-    :param record_timing_info: Dbt flag to add '--record-timing-info'
-    :type record_timing_info: bool
-    :param debug: Dbt flag to add '--debug'
-    :type debug: bool
-    :param log_format: Specifies how dbt's logs should be formatted. The
-        value for this flag can be one of: text, json, or default
-    :type log_format: str
-    :param write_json: If set to no it adds the `--no-write-json` Dbt flag
-    :type write_json: bool
-    :param strict: Only for use during dbt development. It performs extra
-        validation of dbt objects and internal consistency checks during
-        compilation
-    :type strict: bool
-    :param warn_error: Converts dbt warnings into errors
-    :type warn_error: bool
-    :param partial_parse: configure partial parsing in your project, and
-        will override the value set in `profiles.yml
-    :type partial_parse: bool
-    :param use_experimental_parser: Statically analyze model files in your
-        project and, if possible, extract needed information 3x faster than
-        a full Jinja render
-    :type use_experimental_parser: bool
-    :param use_colors: Displays colors in dbt logs
-    :type use_colors: bool
-    :param profiles_dir: Path to profiles.yaml dir. Can be relative from
-        the folder the DAG is being run, which usually is the home or de
-        DAGs folder
-    :type profiles_dir: str
-    :param project_dir: Path to the dbt project you want to run. Can be
-        relative to the path the DAG is being run
-    :type project_dir: str
-    :param profile: Which profile to load. Overrides setting in
-        dbt_project.yml
-    :type profile: Which profile to load. Overrides setting in
-        dbt_project.yml
-    :param target: Which target to load for the given profile
-    :type target: str
-    :param config_dir: Sames a profile_dir
-    :type config_dir: str
-    :param resource_type: One of: model,snapshot,source,analysis,seed,
-        exposure,test,default,all
-    :type resource_type: str
-    :param vars: Supply variables to the project. This argument overrides
-        variables defined in your dbt_project.yml file. This argument should
-        be a YAML string, eg. '{my_variable: my_value}'
-    :type vars: dict
-    :param full_refresh: If specified, dbt will drop incremental models and
-        fully-recalculate the incremental table from the model definition
-    :type full_refresh: bool
-    :param data: Run data tests defined in "tests" directory.
-    :type data: bool
-    :param schema: Run constraint validations from schema.yml files
-    :type schema: bool
-    :param models: Flag used to choose a node or subset of nodes to apply
-        the command to (v0.210.0 and lower)
-    :type models: str
-    :param exclude: Nodes to exclude from the set defined with
-        select/models
-    :type exclude: str
-    :param select: Flag used to choose a node or subset of nodes to apply
-        the command to (v0.21.0 and higher)
-    :type select: str
-    :param selector: Config param to reference complex selects defined in
-        the config yaml
-    :type selector: str
-    :param output: {json,name,path,selector}
-    :type output: str
-    :param output_keys: Which keys to output
-    :type output_keys: str
-    :param host: Specify the host to listen on for the rpc server
-    :type host: str
-    :param port: Specify the port number for the rpc server
-    :type port: int
-    :param fail_fast: Stop execution upon a first test failure
-    :type fail_fast: bool
-    :param args:
-    :type args:
-    :param no_compile: Do not run "dbt compile" as part of docs generation
-    :type no_compile: bool
     """
     if not dbt_bin:
         raise ValueError("dbt_bin is mandatory")
@@ -149,12 +72,15 @@ def generate_dbt_cli_command(
         raise ValueError("command mandatory")
     base_params = render_config(base_config)
     command_params = render_config(command_config)
-    return [dbt_bin, *base_params, command, *command_params]
+    # commands like 'dbt docs generate' need the command to be split in two
+    command_pieces = command.split(" ")
+    return [dbt_bin, *base_params, *command_pieces, *command_params]
 
 
 class DbtBaseHook(BaseHook, ABC):
     """
-    Simple wrapper around the dbt CLI and interface to implement dbt hooks
+    Base abstract class for all DbtHooks to have a common interface and force
+    implement the mandatory `run_dbt()` function.
     """
 
     def __init__(self, env: Optional[Dict] = None):
