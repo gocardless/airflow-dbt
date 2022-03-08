@@ -8,7 +8,7 @@ from airflow.hooks.base_hook import BaseHook
 from airflow_dbt.dbt_command_config import DbtCommandConfig
 
 
-def render_config(config: dict[str, Union[str, bool]]) -> List[str]:
+def render_config(config: Dict[str, Union[str, bool]]) -> List[str]:
     """Renders a dictionary of options into a list of cli strings"""
     dbt_command_config_annotations = DbtCommandConfig.__annotations__
     command_params = []
