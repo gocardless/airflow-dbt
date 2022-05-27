@@ -76,6 +76,8 @@ There are five operators currently implemented:
 
 Each of the above operators accept the following arguments:
 
+* `env`
+  * If set as a kwarg dict, passed the given environment variables as the arguments to the dbt task
 * `profiles_dir`
   * If set, passed as the `--profiles-dir` argument to the `dbt` command
 * `target`
@@ -161,6 +163,41 @@ dbt_run = DbtRunOperator(
   dbt_bin='/usr/local/airflow/.local/bin/dbt',
   profiles_dir='/usr/local/airflow/dags/{DBT_FOLDER}/',
   dir='/usr/local/airflow/dags/{DBT_FOLDER}/'
+)
+```
+
+## Templating and parsing environments variables
+
+If you would like to run DBT using custom profile definition template with environment-specific variables, like for example profiles.yml using jinja:
+```yaml
+<profile_name>:
+  outputs:
+    <source>:
+      database: "{{ env_var('DBT_ENV_SECRET_DATABASE') }}"
+      password: "{{ env_var('DBT_ENV_SECRET_PASSWORD') }}"
+      schema: "{{ env_var('DBT_ENV_SECRET_SCHEMA') }}"
+      threads: "{{ env_var('DBT_THREADS') }}"
+      type: <type>
+      user: "{{ env_var('USER_NAME') }}_{{ env_var('ENV_NAME') }}"
+  target: <source>
+```
+
+You can pass the environment variables via the `env` kwarg parameter:
+
+```python
+import os
+...
+
+dbt_run = DbtRunOperator(
+  task_id='dbt_run',
+  env={
+    'DBT_ENV_SECRET_DATABASE': '<DATABASE>',
+    'DBT_ENV_SECRET_PASSWORD': '<PASSWORD>',
+    'DBT_ENV_SECRET_SCHEMA': '<SCHEMA>',
+    'USER_NAME': '<USER_NAME>',
+    'DBT_THREADS': os.getenv('<DBT_THREADS_ENV_VARIABLE_NAME>'),
+    'ENV_NAME': os.getenv('ENV_NAME')
+  }
 )
 ```
 

@@ -11,6 +11,8 @@ class DbtCliHook(BaseHook):
     """
     Simple wrapper around the dbt CLI.
 
+    :param env: If set, passes the env variables to the subprocess handler
+    :type env: dict
     :param profiles_dir: If set, passed as the `--profiles-dir` argument to the `dbt` command
     :type profiles_dir: str
     :param target: If set, passed as the `--target` argument to the `dbt` command
@@ -40,6 +42,7 @@ class DbtCliHook(BaseHook):
     """
 
     def __init__(self,
+                 env=None,
                  profiles_dir=None,
                  target=None,
                  dir='.',
@@ -55,6 +58,7 @@ class DbtCliHook(BaseHook):
                  output_encoding='utf-8',
                  verbose=True,
                  warn_error=False):
+        self.env = env or {}
         self.profiles_dir = profiles_dir
         self.dir = dir
         self.target = target
@@ -125,6 +129,7 @@ class DbtCliHook(BaseHook):
 
         sp = subprocess.Popen(
             dbt_cmd,
+            env=self.env,
             stdout=subprocess.PIPE,
             stderr=subprocess.STDOUT,
             cwd=self.dir,
