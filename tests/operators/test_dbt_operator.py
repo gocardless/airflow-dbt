@@ -7,7 +7,8 @@ from airflow import DAG, configuration
 
 from airflow_dbt import DbtCliHook
 from airflow_dbt.operators.dbt_operator import (
-    DbtBuildOperator, DbtCleanOperator, DbtCompileOperator, DbtDebugOperator, DbtDepsOperator, DbtDocsGenerateOperator,
+    DbtBaseOperator, DbtBuildOperator, DbtCleanOperator, DbtCompileOperator, DbtDebugOperator, DbtDepsOperator,
+    DbtDocsGenerateOperator,
     DbtInitOperator, DbtListOperator, DbtParseOperator, DbtRunOperator,
     DbtSeedOperator,
     DbtSnapshotOperator,
@@ -53,7 +54,7 @@ def mock_dag() -> MagicMock:
 @mock.patch.object(DbtCliHook, 'run_cli')
 def test_operators_commands(
     spy_cli_run,
-    operator: DbtRunOperator,
+    operator: DbtBaseOperator,
     expected_command: [str],
     mock_dag,
 ):
