@@ -28,7 +28,7 @@ class TestDbtOperator(TestCase):
             dag=self.dag
         )
         operator.execute(None)
-        mock_run_cli.assert_called_once_with('run')
+        mock_run_cli.assert_called_once_with(['dbt', 'run', '--project-dir', '.'])
 
     @mock.patch.object(DbtCliHook, 'run_cli')
     def test_dbt_test(self, mock_run_cli):
@@ -37,7 +37,7 @@ class TestDbtOperator(TestCase):
             dag=self.dag
         )
         operator.execute(None)
-        mock_run_cli.assert_called_once_with('test')
+        mock_run_cli.assert_called_once_with(['dbt', 'test', '--project-dir', '.'])
 
     @mock.patch.object(DbtCliHook, 'run_cli')
     def test_dbt_snapshot(self, mock_run_cli):
@@ -46,7 +46,7 @@ class TestDbtOperator(TestCase):
             dag=self.dag
         )
         operator.execute(None)
-        mock_run_cli.assert_called_once_with('snapshot')
+        mock_run_cli.assert_called_once_with(['dbt', 'snapshot', '--project-dir', '.'])
 
     @mock.patch.object(DbtCliHook, 'run_cli')
     def test_dbt_seed(self, mock_run_cli):
@@ -55,7 +55,7 @@ class TestDbtOperator(TestCase):
             dag=self.dag
         )
         operator.execute(None)
-        mock_run_cli.assert_called_once_with('seed')
+        mock_run_cli.assert_called_once_with(['dbt', 'seed', '--project-dir', '.'])
 
     @mock.patch.object(DbtCliHook, 'run_cli')
     def test_dbt_deps(self, mock_run_cli):
@@ -64,7 +64,7 @@ class TestDbtOperator(TestCase):
             dag=self.dag
         )
         operator.execute(None)
-        mock_run_cli.assert_called_once_with('deps')
+        mock_run_cli.assert_called_once_with(['dbt', 'deps', '--project-dir', '.'])
 
     @mock.patch.object(DbtCliHook, 'run_cli')
     def test_dbt_clean(self, mock_run_cli):
@@ -73,4 +73,4 @@ class TestDbtOperator(TestCase):
             dag=self.dag
         )
         operator.execute(None)
-        mock_run_cli.assert_called_once_with('clean')
+        mock_run_cli.assert_called_once_with(['dbt', 'clean', '--project-dir', '.'])
