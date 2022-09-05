@@ -1,7 +1,27 @@
 name: Publish package to PyPi
-on: push
-
+on: [ push ]
 jobs:
+
+  lint:
+    name: Lint
+    runs-on: python:3.7.4
+    steps:
+      - uses: actions/checkout@master
+      - name: Install flake8
+        run: pip install flake8
+      - name: Run lints
+        run: flake8 airflow_dbt/ tests/ setup.py
+
+  test:
+    name: Test
+    runs-on: python:3.7.4
+    steps:
+      - uses: actions/checkout@master
+      - name: Install deps and pytest
+        run: pip install --progress-bar off --user . pytest
+      - name: Run tests
+        run: fpython -m pytest tests/ -sv
+
   build-n-publish:
     name: Build and publish Python 🐍 distributions 📦 to PyPI and TestPyPI
     runs-on: ubuntu-latest
