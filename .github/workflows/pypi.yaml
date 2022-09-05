@@ -1,11 +1,15 @@
 name: Publish package to PyPi
 on: [ push ]
 jobs:
-
   lint:
     name: Lint
-    runs-on: python:3.7.4
+    runs-on: ubuntu-latest
     steps:
+      - uses: actions/checkout@master
+      - name: Set up Python 3.10
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.10'
       - uses: actions/checkout@master
       - name: Install flake8
         run: pip install flake8
@@ -14,13 +18,17 @@ jobs:
 
   test:
     name: Test
-    runs-on: python:3.7.4
+    runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@master
+      - name: Set up Python 3.10
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.10'
       - name: Install deps and pytest
         run: pip install --progress-bar off --user . pytest
       - name: Run tests
-        run: fpython -m pytest tests/ -sv
+        run: pytest tests/ -sv
 
   build-n-publish:
     name: Build and publish Python 🐍 distributions 📦 to PyPI and TestPyPI
@@ -28,7 +36,7 @@ jobs:
     steps:
       - uses: actions/checkout@master
       - name: Set up Python 3.10
-        uses: actions/setup-python@v3
+        uses: actions/setup-python@v4
         with:
           python-version: '3.10'
       - name: Install pypa/build
