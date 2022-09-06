@@ -11,6 +11,8 @@ class DbtCliHook(BaseHook):
     """
     Simple wrapper around the dbt CLI.
 
+    :param env: If set, passes the env variables to the subprocess handler
+    :type env: dict
     :param profiles_dir: If set, passed as the `--profiles-dir` argument to the `dbt` command
     :type profiles_dir: str
     :param target: If set, passed as the `--target` argument to the `dbt` command
@@ -29,6 +31,8 @@ class DbtCliHook(BaseHook):
     :type exclude: str
     :param select: If set, passed as the `--select` argument to the `dbt` command
     :type select: str
+    :param selector: If set, passed as the `--selector` argument to the `dbt` command
+    :type selector: str
     :param dbt_bin: The `dbt` CLI. Defaults to `dbt`, so assumes it's on your `PATH`
     :type dbt_bin: str
     :param output_encoding: Output encoding of bash command. Defaults to utf-8
@@ -38,6 +42,7 @@ class DbtCliHook(BaseHook):
     """
 
     def __init__(self,
+                 env=None,
                  profiles_dir=None,
                  target=None,
                  dir='.',
@@ -48,10 +53,12 @@ class DbtCliHook(BaseHook):
                  models=None,
                  exclude=None,
                  select=None,
+                 selector=None,
                  dbt_bin='dbt',
                  output_encoding='utf-8',
                  verbose=True,
                  warn_error=False):
+        self.env = env or {}
         self.profiles_dir = profiles_dir
         self.dir = dir
         self.target = target
@@ -62,6 +69,7 @@ class DbtCliHook(BaseHook):
         self.models = models
         self.exclude = exclude
         self.select = select
+        self.selector = selector
         self.dbt_bin = dbt_bin
         self.verbose = verbose
         self.warn_error = warn_error
@@ -107,6 +115,9 @@ class DbtCliHook(BaseHook):
         if self.select is not None:
             dbt_cmd.extend(['--select', self.select])
 
+        if self.selector is not None:
+            dbt_cmd.extend(['--selector', self.selector])
+
         if self.full_refresh:
             dbt_cmd.extend(['--full-refresh'])
 
@@ -118,6 +129,7 @@ class DbtCliHook(BaseHook):
 
         sp = subprocess.Popen(
             dbt_cmd,
+            env=self.env,
             stdout=subprocess.PIPE,
             stderr=subprocess.STDOUT,
             cwd=self.dir,

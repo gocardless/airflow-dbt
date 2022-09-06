@@ -7,12 +7,21 @@ from airflow import DAG, configuration
 
 from airflow_dbt import DbtCliHook
 from airflow_dbt.operators.dbt_operator import (
-    DbtBaseOperator, DbtBuildOperator, DbtCleanOperator, DbtCompileOperator, DbtDebugOperator, DbtDepsOperator,
+    DbtBaseOperator,
+    DbtBuildOperator,
+    DbtCleanOperator,
+    DbtCompileOperator,
+    DbtDebugOperator,
+    DbtDepsOperator,
     DbtDocsGenerateOperator,
-    DbtInitOperator, DbtListOperator, DbtParseOperator, DbtRunOperator,
+    DbtInitOperator,
+    DbtListOperator,
+    DbtParseOperator,
+    DbtRunOperator,
     DbtSeedOperator,
     DbtSnapshotOperator,
-    DbtSourceOperator, DbtTestOperator,
+    DbtSourceOperator,
+    DbtTestOperator,
 )
 
 
