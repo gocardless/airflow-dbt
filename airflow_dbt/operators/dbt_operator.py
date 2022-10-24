@@ -367,3 +367,12 @@ class DbtCleanOperator(DbtBaseOperator):
     @apply_defaults
     def __init__(self, *args, **kwargs):
         super().__init__(*args, command='clean', **kwargs)
+
+
+class DbtDebugOperator(DbtBaseOperator):
+    """Runs a dbt clean command"""
+
+    # noinspection PyDeprecation
+    @apply_defaults
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, command='debug', **kwargs)
