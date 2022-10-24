@@ -1,0 +1,32 @@
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[project]
+name = "airflow-dbt-dinigo"
+dynamic = ["version"]
+description = "Apache Airflow integration for dbt"
+readme = "README.md"
+license = "MIT"
+classifiers = [
+    "Development Status :: 5 - Production/Stable",
+    "License :: OSI Approved :: MIT License",
+    "Operating System :: MacOS :: MacOS X",
+    "Operating System :: POSIX :: Linux",
+    "Programming Language :: Python :: 3.7",
+]
+dependencies = [
+    "apache-airflow >= 1.10.3",
+]
+packages = [
+    { include = "airflow_dbt" },
+]
+
+[project.optional-dependencies]
+google = [
+    "apache-airflow-providers-google",
+    "google-cloud-build",
+]
+
+[tool.hatch.version]
+path = "airflow_dbt/__version__.py"
