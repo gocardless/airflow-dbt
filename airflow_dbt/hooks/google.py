@@ -11,7 +11,6 @@ from airflow.providers.google.cloud.hooks.cloud_build import (
 )
 from airflow.providers.google.cloud.hooks.gcs import GCSHook, _parse_gcs_url
 from airflow.utils.yaml import dump
-from google.api_core.operation import Operation
 from google.cloud.devtools.cloudbuild_v1 import (
     Build,
 )
@@ -29,11 +28,11 @@ class DbtCloudBuildHook(DbtBaseHook):
         self,
         project_id: Optional[str] = None,
         gcs_staging_location: str = None,
-        gcp_conn_id: str = "google_cloud_default",
+        gcp_conn_id: str = None,
         env: Optional[Dict] = None,
         service_account: Optional[str] = None,
-        dbt_version: str = '1.0.0',
-        dbt_image: str = 'fishtownanalytics/dbt',
+        dbt_version: str = 'latest',
+        dbt_image: str = 'ghcr.io/dbt-labs/dbt-bigquery',
         dbt_project_dir: str = None,
         dbt_artifacts_dest: str = None,
     ):
@@ -56,7 +55,7 @@ class DbtCloudBuildHook(DbtBaseHook):
             to avoid collision between possible different concurrent runs.
         :type gcs_staging_location: str
         :param dbt_version: the DBT version to be fetched from dockerhub.
-        Defaults to '1.0.0'. It represents the image tag. So it must also be
+        Defaults to 'latest'. It represents the image tag. So it must also be
         a tag for your custom Docker dbt image if you provide one.
         :type dbt_version: str
         :param service_account: email for the service account. If set must be
@@ -75,7 +74,10 @@ class DbtCloudBuildHook(DbtBaseHook):
         # gcp config
         self.gcs_staging_bucket = staging_bucket
         self.gcs_staging_blob = staging_blob
-        self.cloud_build_hook = CloudBuildHook(gcp_conn_id=gcp_conn_id)
+        if gcp_conn_id is None:
+            self.cloud_build_hook = CloudBuildHook()
+        else:
+            self.cloud_build_hook = CloudBuildHook(gcp_conn_id=gcp_conn_id)
         self.gcp_conn_id = gcp_conn_id
         self.project_id = project_id or self.cloud_build_hook.project_id
         self.service_account = service_account
@@ -140,8 +142,7 @@ class DbtCloudBuildHook(DbtBaseHook):
          :param dbt_cmd: The dbt whole command to run
          :type dbt_cmd: List[str]
          """
-        # See: https://cloud.google.com/cloud-build/docs/api/reference/rest
-        # /v1/projects.builds
+        # See: https://cloud.google.com/cloud-build/docs/api/reference/rest/v1/projects.builds
         cloud_build_config = self._get_cloud_build_config(dbt_cmd)
         logging.info(
             f'Running the following cloud build'
@@ -149,28 +150,18 @@ class DbtCloudBuildHook(DbtBaseHook):
         )
 
         try:
-            cloud_build_client = self.get_conn()
-
-            self.log.info("Start creating build.")
-
-            operation: Operation = cloud_build_client.create_build(
-                request={
-                    'project_id': self.project_id,
-                    'build': cloud_build_config
-                }
-            )
-            # wait for the operation to complete
-            operation.result()
-
-            result_build: Build = operation.metadata.build
-
+            # cloud_build_client = self.get_conn()
+            self.log.info("Creating build")
+            result_build: Build = self.cloud_build_hook.create_build(
+                cloud_build_config
+                )
             self.log.info(
                 f"Build has been created: {result_build.id}.\n"
                 f'Build logs available at: {result_build.log_url} and the '
                 f'file gs://{result_build.logs_bucket}/log-'
                 f'{result_build.id}.txt'
             )
-
+            self.build_id = result_build.id
             # print logs from GCS
             with GCSHook().provide_file(
                 bucket_name=result_build.logs_bucket,
@@ -195,4 +186,4 @@ class DbtCloudBuildHook(DbtBaseHook):
 
     def on_kill(self):
         """Stopping the build is not implemented until google providers v6"""
-        raise NotImplementedError
+        self.cloud_build_hook.cancel_build(self.build_id)
