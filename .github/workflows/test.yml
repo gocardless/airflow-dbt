@@ -1,8 +1,6 @@
-name: gocardless/airflow-dbt/test
-on:
-  push:
-    branches:
-    - master
+name: test
+on: push
+
 jobs:
   test:
     runs-on: ubuntu-latest
@@ -19,6 +17,7 @@ jobs:
       run: pip install --progress-bar off --user . pytest
     - name: Run tests
       run: python -m pytest tests/ -sv
+
   lint:
     runs-on: ubuntu-latest
     container:
