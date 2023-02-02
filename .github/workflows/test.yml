@@ -1,0 +1,30 @@
+name: test
+on: push
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    container:
+      image: python:3.7.4
+    steps:
+    - uses: actions/checkout@v3.1.0
+    - name: restore_cache
+      uses: actions/cache@v3
+      with:
+        key: py3.7-{{ checksum "setup.py"  }}
+        path: "/root/.local/lib/"
+    - name: Install deps and pytest
+      run: pip install --progress-bar off --user . pytest
+    - name: Run tests
+      run: python -m pytest tests/ -sv
+
+  lint:
+    runs-on: ubuntu-latest
+    container:
+      image: python:3.7.4
+    steps:
+    - uses: actions/checkout@v3.1.0
+    - name: Install flake8
+      run: pip install flake8
+    - name: Run lints
+      run: flake8 airflow_dbt/ tests/ setup.py
