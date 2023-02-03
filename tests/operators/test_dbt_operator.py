@@ -1,76 +1,74 @@
 import datetime
-from unittest import TestCase, mock
+from unittest import mock
+from unittest.mock import MagicMock
+
+import pytest
 from airflow import DAG, configuration
-from airflow_dbt.hooks.dbt_hook import DbtCliHook
+
+from airflow_dbt import DbtCliHook
 from airflow_dbt.operators.dbt_operator import (
+    DbtBaseOperator,
+    DbtBuildOperator,
+    DbtCleanOperator,
+    DbtCompileOperator,
+    DbtDebugOperator,
+    DbtDepsOperator,
+    DbtDocsGenerateOperator,
+    DbtInitOperator,
+    DbtListOperator,
+    DbtParseOperator,
+    DbtRunOperator,
     DbtSeedOperator,
     DbtSnapshotOperator,
-    DbtRunOperator,
+    DbtSourceOperator,
     DbtTestOperator,
-    DbtDepsOperator,
-    DbtCleanOperator,
 )
 
 
-class TestDbtOperator(TestCase):
-    def setUp(self):
-        configuration.conf.load_test_config()
-        args = {
-            'owner': 'airflow',
-            'start_date': datetime.datetime(2020, 2, 27)
-        }
-        self.dag = DAG('test_dag_id', default_args=args)
+@pytest.fixture
+def spy_cli_run(mocker) -> MagicMock:
+    yield mocker.patch("airflow_dbt.hooks.dbt_hook.DbtCliHook.run_cli")
 
-    @mock.patch.object(DbtCliHook, 'run_cli')
-    def test_dbt_run(self, mock_run_cli):
-        operator = DbtRunOperator(
-            task_id='run',
-            dag=self.dag
-        )
-        operator.execute(None)
-        mock_run_cli.assert_called_once_with('run')
 
-    @mock.patch.object(DbtCliHook, 'run_cli')
-    def test_dbt_test(self, mock_run_cli):
-        operator = DbtTestOperator(
-            task_id='test',
-            dag=self.dag
-        )
-        operator.execute(None)
-        mock_run_cli.assert_called_once_with('test')
+@pytest.fixture
+def mock_dag() -> MagicMock:
+    configuration.conf.load_test_config()
+    args = {
+        'owner': 'airflow',
+        'start_date': datetime.datetime(2020, 2, 27)
+    }
+    yield DAG('test_dag_id', default_args=args)
 
-    @mock.patch.object(DbtCliHook, 'run_cli')
-    def test_dbt_snapshot(self, mock_run_cli):
-        operator = DbtSnapshotOperator(
-            task_id='snapshot',
-            dag=self.dag
-        )
-        operator.execute(None)
-        mock_run_cli.assert_called_once_with('snapshot')
 
-    @mock.patch.object(DbtCliHook, 'run_cli')
-    def test_dbt_seed(self, mock_run_cli):
-        operator = DbtSeedOperator(
-            task_id='seed',
-            dag=self.dag
-        )
-        operator.execute(None)
-        mock_run_cli.assert_called_once_with('seed')
-
-    @mock.patch.object(DbtCliHook, 'run_cli')
-    def test_dbt_deps(self, mock_run_cli):
-        operator = DbtDepsOperator(
-            task_id='deps',
-            dag=self.dag
-        )
-        operator.execute(None)
-        mock_run_cli.assert_called_once_with('deps')
-
-    @mock.patch.object(DbtCliHook, 'run_cli')
-    def test_dbt_clean(self, mock_run_cli):
-        operator = DbtCleanOperator(
-            task_id='clean',
-            dag=self.dag
-        )
-        operator.execute(None)
-        mock_run_cli.assert_called_once_with('clean')
+@pytest.mark.parametrize(
+    ['operator', 'expected_command'],
+    [
+        (DbtRunOperator, ['run']),
+        (DbtTestOperator, ['test']),
+        (DbtSnapshotOperator, ['snapshot']),
+        (DbtDocsGenerateOperator, ['docs', 'generate']),
+        (DbtSeedOperator, ['seed']),
+        (DbtDepsOperator, ['deps']),
+        (DbtBuildOperator, ['build']),
+        (DbtCleanOperator, ['clean']),
+        (DbtCompileOperator, ['compile']),
+        (DbtDebugOperator, ['debug']),
+        (DbtInitOperator, ['init']),
+        (DbtListOperator, ['list']),
+        (DbtParseOperator, ['parse']),
+        (DbtListOperator, ['list']),
+        (DbtSourceOperator, ['source']),
+    ]
+)
+@mock.patch.object(DbtCliHook, 'run_cli')
+def test_operators_commands(
+    spy_cli_run,
+    operator: DbtBaseOperator,
+    expected_command: [str],
+    mock_dag,
+):
+    """Every operator passess down to the execution the correct dbt command"""
+    task_id =  'test_dbt_' + '_'.join(expected_command)
+    operator = operator(task_id=task_id, dag=mock_dag)
+    operator.execute(None)
+    spy_cli_run.assert_called_once_with(*expected_command)

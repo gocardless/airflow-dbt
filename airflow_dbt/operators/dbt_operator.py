@@ -154,6 +154,15 @@ class DbtDepsOperator(DbtBaseOperator):
         self.create_hook().run_cli('deps')
 
 
+class DbtBuildOperator(DbtBaseOperator):
+    @apply_defaults
+    def __init__(self, profiles_dir=None, target=None, *args, **kwargs):
+        super(DbtBuildOperator, self).__init__(profiles_dir=profiles_dir, target=target, *args, **kwargs)
+
+    def execute(self, context):
+        self.create_hook().run_cli('build')
+
+
 class DbtCleanOperator(DbtBaseOperator):
     @apply_defaults
     def __init__(self, profiles_dir=None, target=None, *args, **kwargs):
@@ -161,3 +170,66 @@ class DbtCleanOperator(DbtBaseOperator):
 
     def execute(self, context):
         self.create_hook().run_cli('clean')
+
+
+class DbtCompileOperator(DbtBaseOperator):
+    @apply_defaults
+    def __init__(self, profiles_dir=None, target=None, *args, **kwargs):
+        super(DbtCompileOperator, self).__init__(profiles_dir=profiles_dir, target=target, *args, **kwargs)
+
+    def execute(self, context):
+        self.create_hook().run_cli('compile')
+
+
+class DbtDebugOperator(DbtBaseOperator):
+    @apply_defaults
+    def __init__(self, profiles_dir=None, target=None, *args, **kwargs):
+        super(DbtDebugOperator, self).__init__(profiles_dir=profiles_dir, target=target, *args, **kwargs)
+
+    def execute(self, context):
+        self.create_hook().run_cli('debug')
+
+
+class DbtInitOperator(DbtBaseOperator):
+    @apply_defaults
+    def __init__(self, profiles_dir=None, target=None, *args, **kwargs):
+        super(DbtInitOperator, self).__init__(profiles_dir=profiles_dir, target=target, *args, **kwargs)
+
+    def execute(self, context):
+        self.create_hook().run_cli('init')
+
+
+class DbtListOperator(DbtBaseOperator):
+    @apply_defaults
+    def __init__(self, profiles_dir=None, target=None, *args, **kwargs):
+        super(DbtListOperator, self).__init__(profiles_dir=profiles_dir, target=target, *args, **kwargs)
+
+    def execute(self, context):
+        self.create_hook().run_cli('list')
+
+
+class DbtParseOperator(DbtBaseOperator):
+    @apply_defaults
+    def __init__(self, profiles_dir=None, target=None, *args, **kwargs):
+        super(DbtParseOperator, self).__init__(profiles_dir=profiles_dir, target=target, *args, **kwargs)
+
+    def execute(self, context):
+        self.create_hook().run_cli('parse')
+
+
+class DbtSourceOperator(DbtBaseOperator):
+    @apply_defaults
+    def __init__(self, profiles_dir=None, target=None, *args, **kwargs):
+        super(DbtSourceOperator, self).__init__(profiles_dir=profiles_dir, target=target, *args, **kwargs)
+
+    def execute(self, context):
+        self.create_hook().run_cli('source')
+
+
+class DbtRunOperationOperator(DbtBaseOperator):
+    @apply_defaults
+    def __init__(self, profiles_dir=None, target=None, *args, **kwargs):
+        super(DbtRunOperationOperator, self).__init__(profiles_dir=profiles_dir, target=target, *args, **kwargs)
+
+    def execute(self, context):
+        self.create_hook().run_cli('run-operation')
