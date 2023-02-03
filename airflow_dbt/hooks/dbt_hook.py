@@ -126,10 +126,13 @@ class DbtCliHook(BaseHook):
 
         if self.verbose:
             self.log.info(" ".join(dbt_cmd))
+          
+        dbt_env = os.environ.copy()
+        dbt_env.update(self.env)
 
         sp = subprocess.Popen(
             dbt_cmd,
-            env=self.env,
+            env=dbt_env,
             stdout=subprocess.PIPE,
             stderr=subprocess.STDOUT,
             cwd=self.dir,
