@@ -38,7 +38,7 @@ class DbtBaseOperator(BaseOperator):
 
     ui_color = '#d6522a'
 
-    template_fields = ['env', 'vars']
+    template_fields = ['env', 'vars', 'dir', 'select', 'exclude', 'target']
 
     @apply_defaults
     def __init__(self,
